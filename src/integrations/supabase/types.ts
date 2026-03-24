@@ -14,7 +14,417 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      batches: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          id: string
+          name: string
+          section: string
+          semester: number
+          strength: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          name: string
+          section?: string
+          semester?: number
+          strength?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          name?: string
+          section?: string
+          semester?: number
+          strength?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batches_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          code: string
+          created_at: string
+          credit_hours: number
+          department_id: string | null
+          id: string
+          lab_hours: number
+          lecture_hours: number
+          name: string
+          requires_lab: boolean
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          credit_hours?: number
+          department_id?: string | null
+          id?: string
+          lab_hours?: number
+          lecture_hours?: number
+          name: string
+          requires_lab?: boolean
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          credit_hours?: number
+          department_id?: string | null
+          id?: string
+          lab_hours?: number
+          lecture_hours?: number
+          name?: string
+          requires_lab?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      faculty: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          email: string | null
+          id: string
+          max_hours_per_day: number
+          max_hours_per_week: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          email?: string | null
+          id?: string
+          max_hours_per_day?: number
+          max_hours_per_week?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          email?: string | null
+          id?: string
+          max_hours_per_day?: number
+          max_hours_per_week?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faculty_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faculty_preferences: {
+        Row: {
+          created_at: string
+          day: Database["public"]["Enums"]["day_of_week"]
+          faculty_id: string
+          id: string
+          preference: number
+          time_slot_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: Database["public"]["Enums"]["day_of_week"]
+          faculty_id: string
+          id?: string
+          preference?: number
+          time_slot_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: Database["public"]["Enums"]["day_of_week"]
+          faculty_id?: string
+          id?: string
+          preference?: number
+          time_slot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faculty_preferences_faculty_id_fkey"
+            columns: ["faculty_id"]
+            isOneToOne: false
+            referencedRelation: "faculty"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faculty_preferences_time_slot_id_fkey"
+            columns: ["time_slot_id"]
+            isOneToOne: false
+            referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          building: string | null
+          capacity: number
+          created_at: string
+          floor: number | null
+          has_projector: boolean
+          id: string
+          name: string
+          room_type: Database["public"]["Enums"]["room_type"]
+          updated_at: string
+        }
+        Insert: {
+          building?: string | null
+          capacity?: number
+          created_at?: string
+          floor?: number | null
+          has_projector?: boolean
+          id?: string
+          name: string
+          room_type?: Database["public"]["Enums"]["room_type"]
+          updated_at?: string
+        }
+        Update: {
+          building?: string | null
+          capacity?: number
+          created_at?: string
+          floor?: number | null
+          has_projector?: boolean
+          id?: string
+          name?: string
+          room_type?: Database["public"]["Enums"]["room_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      schedule_entries: {
+        Row: {
+          created_at: string
+          day: Database["public"]["Enums"]["day_of_week"]
+          id: string
+          room_id: string
+          schedule_id: string
+          teaching_assignment_id: string
+          time_slot_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: Database["public"]["Enums"]["day_of_week"]
+          id?: string
+          room_id: string
+          schedule_id: string
+          teaching_assignment_id: string
+          time_slot_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: Database["public"]["Enums"]["day_of_week"]
+          id?: string
+          room_id?: string
+          schedule_id?: string
+          teaching_assignment_id?: string
+          time_slot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_entries_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_entries_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_entries_teaching_assignment_id_fkey"
+            columns: ["teaching_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "teaching_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_entries_time_slot_id_fkey"
+            columns: ["time_slot_id"]
+            isOneToOne: false
+            referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          created_at: string
+          fitness_score: number | null
+          generation_count: number | null
+          hard_constraint_violations: number | null
+          id: string
+          mutation_rate: number | null
+          name: string
+          population_size: number | null
+          soft_constraint_score: number | null
+          status: Database["public"]["Enums"]["schedule_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fitness_score?: number | null
+          generation_count?: number | null
+          hard_constraint_violations?: number | null
+          id?: string
+          mutation_rate?: number | null
+          name: string
+          population_size?: number | null
+          soft_constraint_score?: number | null
+          status?: Database["public"]["Enums"]["schedule_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fitness_score?: number | null
+          generation_count?: number | null
+          hard_constraint_violations?: number | null
+          id?: string
+          mutation_rate?: number | null
+          name?: string
+          population_size?: number | null
+          soft_constraint_score?: number | null
+          status?: Database["public"]["Enums"]["schedule_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      teaching_assignments: {
+        Row: {
+          batch_id: string
+          course_id: string
+          created_at: string
+          faculty_id: string
+          id: string
+          is_lab: boolean
+        }
+        Insert: {
+          batch_id: string
+          course_id: string
+          created_at?: string
+          faculty_id: string
+          id?: string
+          is_lab?: boolean
+        }
+        Update: {
+          batch_id?: string
+          course_id?: string
+          created_at?: string
+          faculty_id?: string
+          id?: string
+          is_lab?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teaching_assignments_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teaching_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teaching_assignments_faculty_id_fkey"
+            columns: ["faculty_id"]
+            isOneToOne: false
+            referencedRelation: "faculty"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_slots: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          is_break: boolean
+          label: string
+          slot_order: number
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          is_break?: boolean
+          label: string
+          slot_order: number
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_break?: boolean
+          label?: string
+          slot_order?: number
+          start_time?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +433,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      day_of_week:
+        | "monday"
+        | "tuesday"
+        | "wednesday"
+        | "thursday"
+        | "friday"
+        | "saturday"
+      room_type: "classroom" | "lab" | "auditorium"
+      schedule_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +568,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      day_of_week: [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+      ],
+      room_type: ["classroom", "lab", "auditorium"],
+      schedule_status: ["draft", "published", "archived"],
+    },
   },
 } as const
