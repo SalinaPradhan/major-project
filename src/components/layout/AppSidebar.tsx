@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
+  LayoutDashboard,
   Building2,
   Users,
   BookOpen,
