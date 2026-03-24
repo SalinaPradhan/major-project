@@ -13,29 +13,51 @@ import {
   ChevronRight,
   LogOut,
   Shield,
-  Eye,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
-const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/departments", icon: Building2, label: "Departments" },
-  { to: "/faculty", icon: Users, label: "Faculty" },
-  { to: "/courses", icon: BookOpen, label: "Courses" },
-  { to: "/rooms", icon: DoorOpen, label: "Rooms" },
-  { to: "/batches", icon: GraduationCap, label: "Batches" },
-  { to: "/assignments", icon: Link2, label: "Assignments" },
-  { to: "/generate", icon: Calendar, label: "Generate" },
-  { to: "/settings", icon: Cog, label: "Settings" },
+interface NavItem {
+  to: string;
+  icon: any;
+  label: string;
+  roles: AppRole[];
+}
+
+const navItems: NavItem[] = [
+  // Admin
+  { to: "/admin", icon: LayoutDashboard, label: "Dashboard", roles: ["admin"] },
+  { to: "/departments", icon: Building2, label: "Departments", roles: ["admin"] },
+  { to: "/faculty", icon: Users, label: "Faculty", roles: ["admin"] },
+  { to: "/courses", icon: BookOpen, label: "Courses", roles: ["admin"] },
+  { to: "/rooms", icon: DoorOpen, label: "Rooms", roles: ["admin"] },
+  { to: "/batches", icon: GraduationCap, label: "Batches", roles: ["admin"] },
+  { to: "/assignments", icon: Link2, label: "Assignments", roles: ["admin"] },
+  { to: "/generate", icon: Calendar, label: "Generate", roles: ["admin"] },
+  // Faculty
+  { to: "/faculty-dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["faculty"] },
+  // Student
+  { to: "/student", icon: LayoutDashboard, label: "Dashboard", roles: ["student"] },
+  // Shared
+  { to: "/settings", icon: Cog, label: "Settings", roles: ["admin", "faculty", "student"] },
 ];
+
+const roleIcons: Record<string, any> = {
+  admin: Shield,
+  faculty: Users,
+  student: GraduationCap,
+};
 
 const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, role, signOut } = useAuth();
+
+  const filteredNavItems = navItems.filter((item) => role && item.roles.includes(role));
+  const RoleIcon = role ? roleIcons[role] || User : User;
 
   return (
     <aside
@@ -61,7 +83,7 @@ const AppSidebar = () => {
 
       {/* Nav */}
       <nav className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <NavLink
@@ -86,7 +108,7 @@ const AppSidebar = () => {
         {!collapsed && (
           <div className="mb-2">
             <div className="flex items-center gap-1.5 mb-1">
-              {role === "admin" ? <Shield size={12} className="text-sidebar-primary" /> : <Eye size={12} className="text-sidebar-foreground/50" />}
+              <RoleIcon size={12} className="text-sidebar-primary" />
               <span className="text-xs font-medium text-sidebar-foreground/80 capitalize">{role || "..."}</span>
             </div>
             <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
