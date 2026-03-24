@@ -212,29 +212,56 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          batch_id: string | null
           created_at: string
+          department_id: string | null
           display_name: string | null
+          faculty_code: string | null
           id: string
+          student_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          batch_id?: string | null
           created_at?: string
+          department_id?: string | null
           display_name?: string | null
+          faculty_code?: string | null
           id?: string
+          student_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          batch_id?: string | null
           created_at?: string
+          department_id?: string | null
           display_name?: string | null
+          faculty_code?: string | null
           id?: string
+          student_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rooms: {
         Row: {
@@ -484,7 +511,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "viewer"
+      app_role: "admin" | "viewer" | "faculty" | "student"
       day_of_week:
         | "monday"
         | "tuesday"
@@ -621,7 +648,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "viewer"],
+      app_role: ["admin", "viewer", "faculty", "student"],
       day_of_week: [
         "monday",
         "tuesday",

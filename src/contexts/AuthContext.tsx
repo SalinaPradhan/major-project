@@ -2,10 +2,12 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AppRole = "admin" | "faculty" | "student" | "viewer" | null;
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  role: "admin" | "viewer" | null;
+  role: AppRole;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -18,7 +20,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<"admin" | "viewer" | null>(null);
+  const [role, setRole] = useState<AppRole>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (userId: string) => {
@@ -27,7 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select("role")
       .eq("user_id", userId)
       .single();
-    setRole((data?.role as "admin" | "viewer") ?? "viewer");
+    setRole((data?.role as AppRole) ?? "viewer");
   };
 
   useEffect(() => {
