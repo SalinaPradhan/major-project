@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
+  Building2,
   Users,
   BookOpen,
   DoorOpen,
@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/departments", icon: Building2, label: "Departments" },
   { to: "/faculty", icon: Users, label: "Faculty" },
   { to: "/courses", icon: BookOpen, label: "Courses" },
   { to: "/rooms", icon: DoorOpen, label: "Rooms" },
