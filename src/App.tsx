@@ -28,7 +28,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode;
   if (!session) return <Navigate to="/auth" replace />;
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     // Redirect to their own dashboard
-    const dashboardMap: Record<string, string> = { admin: "/admin", faculty: "/faculty", student: "/student" };
+    const dashboardMap: Record<string, string> = { admin: "/admin", faculty: "/faculty-dashboard", student: "/student" };
     return <Navigate to={dashboardMap[role] || "/auth"} replace />;
   }
   return <>{children}</>;
@@ -38,7 +38,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, role, loading } = useAuth();
   if (loading) return null;
   if (session && role) {
-    const dashboardMap: Record<string, string> = { admin: "/admin", faculty: "/faculty", student: "/student" };
+    const dashboardMap: Record<string, string> = { admin: "/admin", faculty: "/faculty-dashboard", student: "/student" };
     return <Navigate to={dashboardMap[role] || "/admin"} replace />;
   }
   return <>{children}</>;
@@ -47,7 +47,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 const RootRedirect = () => {
   const { role, loading } = useAuth();
   if (loading) return null;
-  const dashboardMap: Record<string, string> = { admin: "/admin", faculty: "/faculty", student: "/student" };
+  const dashboardMap: Record<string, string> = { admin: "/admin", faculty: "/faculty-dashboard", student: "/student" };
   return <Navigate to={dashboardMap[role ?? ""] || "/admin"} replace />;
 };
 
