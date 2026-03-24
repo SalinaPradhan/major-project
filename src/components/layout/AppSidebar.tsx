@@ -11,9 +11,14 @@ import {
   Cog,
   ChevronLeft,
   ChevronRight,
+  LogOut,
+  Shield,
+  Eye,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -30,6 +35,7 @@ const navItems = [
 const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { user, role, signOut } = useAuth();
 
   return (
     <aside
@@ -54,7 +60,7 @@ const AppSidebar = () => {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2 space-y-0.5 px-2">
+      <nav className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (
@@ -75,14 +81,30 @@ const AppSidebar = () => {
         })}
       </nav>
 
-      {/* Footer */}
-      {!collapsed && (
-        <div className="p-4 border-t border-sidebar-border">
-          <p className="text-xs text-sidebar-foreground/40">
-            University Resource System
-          </p>
-        </div>
-      )}
+      {/* User info + Logout */}
+      <div className="border-t border-sidebar-border p-3">
+        {!collapsed && (
+          <div className="mb-2">
+            <div className="flex items-center gap-1.5 mb-1">
+              {role === "admin" ? <Shield size={12} className="text-sidebar-primary" /> : <Eye size={12} className="text-sidebar-foreground/50" />}
+              <span className="text-xs font-medium text-sidebar-foreground/80 capitalize">{role || "..."}</span>
+            </div>
+            <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
+          </div>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={signOut}
+          className={cn(
+            "w-full text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+            collapsed && "px-2"
+          )}
+        >
+          <LogOut size={16} />
+          {!collapsed && <span className="ml-2">Sign Out</span>}
+        </Button>
+      </div>
     </aside>
   );
 };
