@@ -74,6 +74,7 @@ const App = () => (
               <Route path="/generate" element={<ProtectedRoute allowedRoles={["admin"]}><Generate /></ProtectedRoute>} />
               {/* Faculty routes */}
               <Route path="/faculty-dashboard" element={<ProtectedRoute allowedRoles={["faculty"]}><FacultyDashboard /></ProtectedRoute>} />
+
               {/* Student routes */}
               <Route path="/student" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />
               {/* Shared */}
