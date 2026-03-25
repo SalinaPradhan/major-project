@@ -19,7 +19,7 @@ export interface Faculty {
   subjects: string[];
   maxLoad: number;
   currentLoad: number;
-  status: 'available' | 'on-leave' | 'busy';
+  status: 'available' | 'on_leave' | 'busy';
 }
 
 export interface SupportStaff {
