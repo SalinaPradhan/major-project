@@ -14,6 +14,7 @@ interface EventFormDialogProps {
   onSubmit: (data: EventInsert) => void;
   event?: Event | null;
   isLoading?: boolean;
+  defaultDate?: string;
 }
 
 const EVENT_TYPES = [
