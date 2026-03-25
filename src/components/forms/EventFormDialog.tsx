@@ -25,7 +25,7 @@ const EVENT_TYPES = [
   { value: 'other', label: 'Other' },
 ] as const;
 
-export function EventFormDialog({ open, onOpenChange, onSubmit, event, isLoading }: EventFormDialogProps) {
+export function EventFormDialog({ open, onOpenChange, onSubmit, event, isLoading, defaultDate }: EventFormDialogProps) {
   const { data: rooms = [] } = useRooms();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -46,9 +46,9 @@ export function EventFormDialog({ open, onOpenChange, onSubmit, event, isLoading
       setEndTime(event.end_time);
     } else {
       setTitle(''); setDescription(''); setEventType('other');
-      setRoomId('none'); setEventDate(''); setStartTime(''); setEndTime('');
+      setRoomId('none'); setEventDate(defaultDate || ''); setStartTime(''); setEndTime('');
     }
-  }, [event, open]);
+  }, [event, open, defaultDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
