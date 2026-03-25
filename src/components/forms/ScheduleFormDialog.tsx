@@ -65,10 +65,16 @@ export function ScheduleFormDialog({ open, onOpenChange, schedule }: ScheduleFor
 
   const onSubmit = async (values: ScheduleFormValues) => {
     try {
+      const payload = {
+        name: values.name,
+        status: values.status,
+        population_size: values.population_size ?? null,
+        generation_count: values.generation_count ?? null,
+        mutation_rate: values.mutation_rate ?? null,
+      };
+
       if (isEditing && schedule) {
-        await updateSchedule.mutateAsync({
-          id: schedule.id,
-          ...values,
+        await updateSchedule.mutateAsync({ id: schedule.id, ...payload });
           population_size: values.population_size ?? null,
           generation_count: values.generation_count ?? null,
           mutation_rate: values.mutation_rate ?? null,
