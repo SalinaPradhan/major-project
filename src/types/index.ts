@@ -94,6 +94,12 @@ export interface Alert {
 }
 
 export interface DashboardStats {
+  departments: number;
+  rooms: number;
+  faculty: number;
+  courses: number;
+  batches: number;
+  schedules: number;
   totalRooms: number;
   availableRooms: number;
   totalFaculty: number;

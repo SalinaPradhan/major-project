@@ -1,189 +1,145 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import type { Tables, Enums } from "@/integrations/supabase/types";
-
-type Room = Tables<"rooms">;
-const roomTypes: Enums<"room_type">[] = ["classroom", "lab", "auditorium"];
+import { useState } from 'react';
+import { useRooms, useDeleteRoom } from '@/hooks/useRooms';
+import { useAuth } from '@/contexts/AuthContext';
+import { RoomFormDialog } from '@/components/forms/RoomFormDialog';
+import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Plus, Pencil, Trash2, Search, DoorOpen } from 'lucide-react';
+import { toast } from 'sonner';
+import type { Tables } from '@/integrations/supabase/types';
 
 export default function Rooms() {
-  const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Room | null>(null);
-  const [name, setName] = useState("");
-  const [roomType, setRoomType] = useState<Enums<"room_type">>("classroom");
-  const [capacity, setCapacity] = useState("30");
-  const [building, setBuilding] = useState("");
-  const [floor, setFloor] = useState("");
-  const [hasProjector, setHasProjector] = useState(true);
+  const { isAdminOrAbove } = useAuth();
+  const { data: rooms = [], isLoading } = useRooms();
+  const deleteRoom = useDeleteRoom();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<Tables<'rooms'> | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
-  const { data: rooms = [], isLoading } = useQuery({
-    queryKey: ["rooms"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("rooms").select("*").order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const filtered = rooms.filter((r) =>
+    r.name.toLowerCase().includes(search.toLowerCase()) ||
+    (r.building || '').toLowerCase().includes(search.toLowerCase())
+  );
 
-  const upsert = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        name,
-        room_type: roomType,
-        capacity: parseInt(capacity),
-        building: building || null,
-        floor: floor ? parseInt(floor) : null,
-        has_projector: hasProjector,
-      };
-      if (editing) {
-        const { error } = await supabase.from("rooms").update(payload).eq("id", editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("rooms").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      toast({ title: editing ? "Room updated" : "Room created" });
-      closeDialog();
-    },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("rooms").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      toast({ title: "Room deleted" });
-    },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
-  const openEdit = (r: Room) => {
-    setEditing(r);
-    setName(r.name);
-    setRoomType(r.room_type);
-    setCapacity(String(r.capacity));
-    setBuilding(r.building ?? "");
-    setFloor(r.floor != null ? String(r.floor) : "");
-    setHasProjector(r.has_projector);
-    setOpen(true);
+  const handleEdit = (room: Tables<'rooms'>) => {
+    setEditingRoom(room);
+    setFormOpen(true);
   };
 
-  const closeDialog = () => {
-    setOpen(false);
-    setEditing(null);
-    setName("");
-    setRoomType("classroom");
-    setCapacity("30");
-    setBuilding("");
-    setFloor("");
-    setHasProjector(true);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteRoom.mutateAsync(deleteId);
+      toast.success('Room deleted');
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+    setDeleteId(null);
+  };
+
+  const typeColors: Record<string, string> = {
+    classroom: 'bg-primary/20 text-primary',
+    lab: 'bg-amber-500/20 text-amber-400',
+    auditorium: 'bg-emerald-500/20 text-emerald-400',
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Rooms</h1>
-        <Dialog open={open} onOpenChange={(o) => { if (!o) closeDialog(); else setOpen(true); }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" />Add Room</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editing ? "Edit" : "Add"} Room</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); upsert.mutate(); }} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <Select value={roomType} onValueChange={(v) => setRoomType(v as Enums<"room_type">)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {roomTypes.map((t) => (
-                      <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Capacity</Label>
-                  <Input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Building</Label>
-                  <Input value={building} onChange={(e) => setBuilding(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Floor</Label>
-                  <Input type="number" value={floor} onChange={(e) => setFloor(e.target.value)} />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox checked={hasProjector} onCheckedChange={(v) => setHasProjector(!!v)} />
-                <Label>Has Projector</Label>
-              </div>
-              <Button type="submit" className="w-full" disabled={upsert.isPending}>
-                {editing ? "Update" : "Create"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-3">
+          <DoorOpen className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">Rooms</h1>
+          <Badge variant="secondary">{rooms.length}</Badge>
+        </div>
+        {isAdminOrAbove && (
+          <Button onClick={() => { setEditingRoom(null); setFormOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" />Add Room
+          </Button>
+        )}
+      </div>
+
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search rooms..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">Loading rooms...</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Capacity</TableHead>
-              <TableHead>Building</TableHead>
-              <TableHead>Floor</TableHead>
-              <TableHead>Projector</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rooms.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{r.name}</TableCell>
-                <TableCell className="capitalize">{r.room_type}</TableCell>
-                <TableCell>{r.capacity}</TableCell>
-                <TableCell>{r.building ?? "—"}</TableCell>
-                <TableCell>{r.floor ?? "—"}</TableCell>
-                <TableCell>{r.has_projector ? "✓" : "—"}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                </TableCell>
+        <div className="rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Capacity</TableHead>
+                <TableHead>Building</TableHead>
+                <TableHead>Floor</TableHead>
+                <TableHead>Projector</TableHead>
+                {isAdminOrAbove && <TableHead className="w-24">Actions</TableHead>}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={typeColors[r.room_type] || ''}>
+                      {r.room_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{r.capacity}</TableCell>
+                  <TableCell>{r.building ?? '—'}</TableCell>
+                  <TableCell>{r.floor ?? '—'}</TableCell>
+                  <TableCell>{r.has_projector ? '✓' : '—'}</TableCell>
+                  {isAdminOrAbove && (
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(r)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    No rooms found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       )}
+
+      <RoomFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        room={editingRoom}
+      />
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Delete Room"
+        description="This will permanently delete this room. Any schedules using it will be affected."
+        isPending={deleteRoom.isPending}
+      />
     </div>
   );
 }

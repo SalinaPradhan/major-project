@@ -1,67 +1,81 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, BookOpen, DoorOpen, GraduationCap, ClipboardList } from "lucide-react";
-import { Link } from "react-router-dom";
-
-const statCards = [
-  { label: "Departments", icon: Building2, table: "departments" as const, link: "/departments" },
-  { label: "Faculty", icon: Users, table: "faculty" as const, link: "/faculty" },
-  { label: "Courses", icon: BookOpen, table: "courses" as const, link: "/courses" },
-  { label: "Rooms", icon: DoorOpen, table: "rooms" as const, link: "/rooms" },
-  { label: "Batches", icon: GraduationCap, table: "batches" as const, link: "/batches" },
-  { label: "Assignments", icon: ClipboardList, table: "teaching_assignments" as const, link: "/assignments" },
-];
+import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
+import { ResourceUtilization } from '@/components/dashboard/ResourceUtilization';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { TodaySchedulePreview } from '@/components/dashboard/TodaySchedulePreview';
+import { SwapRequestsPanel } from '@/components/dashboard/SwapRequestsPanel';
+import { Building2, Users, BookOpen, DoorOpen, GraduationCap, Calendar } from 'lucide-react';
 
 export default function Index() {
-  const { role, isAdminOrAbove, user } = useAuth();
+  const { user, role, isAdminOrAbove, isFaculty } = useAuth();
+  const { data: stats, isLoading } = useDashboardStats();
 
-  const counts = statCards.map((card) => {
-    const { data } = useQuery({
-      queryKey: [card.table, "count"],
-      queryFn: async () => {
-        const { count } = await supabase
-          .from(card.table)
-          .select("*", { count: "exact", head: true });
-        return count ?? 0;
-      },
-    });
-    return { ...card, count: data ?? 0 };
-  });
+  const displayName = user?.user_metadata?.display_name ?? user?.email?.split('@')[0] ?? 'User';
+
+  const statItems = [
+    { label: 'Departments', value: stats?.departments ?? 0, icon: Building2, variant: 'default' as const, link: '/departments' },
+    { label: 'Faculty', value: stats?.faculty ?? 0, icon: Users, variant: 'primary' as const, link: '/faculty' },
+    { label: 'Courses', value: stats?.courses ?? 0, icon: BookOpen, variant: 'accent' as const, link: '/courses' },
+    { label: 'Rooms', value: stats?.rooms ?? 0, icon: DoorOpen, variant: 'warning' as const, link: '/rooms' },
+    { label: 'Batches', value: stats?.batches ?? 0, icon: GraduationCap, variant: 'default' as const, link: '/batches' },
+    { label: 'Schedules', value: stats?.schedules ?? 0, icon: Calendar, variant: 'primary' as const, link: '/scheduler' },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold text-foreground">
-          Welcome, {user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? "User"}
+          Welcome back, {displayName}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mt-1">
           {isAdminOrAbove
-            ? "Manage your university resources and schedules"
-            : role === "faculty"
-            ? "View your schedule and manage preferences"
-            : "View your schedule and preferences"}
+            ? 'Manage your university resources, schedules and allocations'
+            : isFaculty
+            ? 'View your schedule and manage your preferences'
+            : 'View your class schedule and timetable'}
         </p>
       </div>
 
       {isAdminOrAbove && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {counts.map((card) => (
-            <Link key={card.label} to={card.link}>
-              <Card className="glass-card hover:border-primary/30 transition-all cursor-pointer group">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                    {card.label}
-                  </CardTitle>
-                  <card.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">{card.count}</div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {statItems.map((item) => (
+              <StatCard
+                key={item.label}
+                title={item.label}
+                value={isLoading ? '...' : item.value}
+                icon={item.icon}
+                variant={item.variant}
+              />
+            ))}
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              <ResourceUtilization />
+              <TodaySchedulePreview />
+            </div>
+            <div className="space-y-6">
+              <QuickActions />
+              <AlertsPanel />
+              <SwapRequestsPanel />
+            </div>
+          </div>
+        </>
+      )}
+
+      {isFaculty && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TodaySchedulePreview />
+          <AlertsPanel />
+        </div>
+      )}
+
+      {role === 'student' && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TodaySchedulePreview />
         </div>
       )}
     </div>
