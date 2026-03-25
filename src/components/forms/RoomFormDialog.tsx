@@ -83,11 +83,7 @@ export function RoomFormDialog({ open, onOpenChange, room }: RoomFormDialogProps
         await updateRoom.mutateAsync({ id: room.id, ...payload });
         toast.success('Room updated successfully');
       } else {
-        await createRoom.mutateAsync({
-          ...values,
-          building: values.building || null,
-          floor: values.floor ?? null,
-        });
+        await createRoom.mutateAsync(payload);
         toast.success('Room created successfully');
       }
       onOpenChange(false);

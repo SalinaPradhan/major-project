@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 // Swap requests are a planned feature — this hook provides the interface
 // once the swap_requests table is created. For now it returns empty data.

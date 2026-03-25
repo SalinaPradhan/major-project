@@ -81,12 +81,7 @@ export function ScheduleFormDialog({ open, onOpenChange, schedule }: ScheduleFor
         });
         toast.success('Schedule updated successfully');
       } else {
-        await createSchedule.mutateAsync({
-          ...values,
-          population_size: values.population_size ?? null,
-          generation_count: values.generation_count ?? null,
-          mutation_rate: values.mutation_rate ?? null,
-        });
+        await createSchedule.mutateAsync(payload);
         toast.success('Schedule created successfully');
       }
       onOpenChange(false);
