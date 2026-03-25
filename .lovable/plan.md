@@ -1,38 +1,41 @@
 
 
-# Fix: Admin Signup Not Assigning Role
+# Plan: Add Sample Data & Test
 
-## Problem
-The `handle_new_user()` database function exists but **no trigger** is attached to `auth.users` to invoke it on signup. So when you sign up, no row is inserted into `user_roles` or `profiles`. The role query returns `[]`, meaning `role` is `null` -- you land on the dashboard without admin privileges (effectively a "viewer" experience).
+## What We'll Do
+Insert realistic sample data into all empty tables so you can immediately test the full workflow — from dashboard stats to timetable generation.
 
-## Solution
+## Sample Data to Insert
 
-### 1. Create the missing trigger (database migration)
-Attach a trigger on `auth.users` AFTER INSERT that calls `handle_new_user()`:
-```sql
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
-```
+### 1. Departments (3)
+- Computer Science (CS)
+- Electronics & Communication (ECE)  
+- Mathematics (MATH)
 
-### 2. Fix existing user's missing role
-Insert the admin role for the already-signed-up user (`fe96fc6b-5fd5-4c04-b8a8-7e645ed9edff`), and create their profile row:
-```sql
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('fe96fc6b-5fd5-4c04-b8a8-7e645ed9edff', 'admin')
-ON CONFLICT (user_id, role) DO NOTHING;
+### 2. Rooms (4 more, keeping existing LHC-100)
+- LHC-101 (classroom, 60 cap)
+- LHC-102 (classroom, 40 cap)
+- CS-Lab-1 (lab, 30 cap)
+- ECE-Lab-1 (lab, 30 cap)
 
-INSERT INTO public.profiles (user_id, display_name)
-VALUES ('fe96fc6b-5fd5-4c04-b8a8-7e645ed9edff', 'salina pradhan')
-ON CONFLICT (user_id) DO NOTHING;
-```
+### 3. Faculty (6)
+- Dr. Sharma (CS), Dr. Gupta (CS), Dr. Patel (ECE), Dr. Singh (ECE), Dr. Rao (MATH), Dr. Joshi (MATH)
 
-### 3. No frontend changes needed
-The `AuthContext` already fetches the role from `user_roles` and the routing logic is correct. Once the role row exists, the admin dashboard will load properly.
+### 4. Courses (6)
+- CS101 Data Structures, CS201 Algorithms (CS)
+- ECE101 Circuits, ECE201 Signals (ECE)
+- MATH101 Calculus, MATH201 Linear Algebra (MATH)
+
+### 5. Batches (4)
+- CS-2026-A (Sem 3, 45 students), CS-2026-B (Sem 3, 40 students)
+- ECE-2026-A (Sem 3, 50 students), MATH-2026-A (Sem 1, 35 students)
+
+### 6. Teaching Assignments (8)
+Map each faculty to their courses and batches (including one lab assignment for CS-Lab)
 
 ## Technical Details
-- The trigger must be on `auth.users` (not the public schema), using `SECURITY DEFINER` on the function (already set)
-- The `handle_new_user` function already handles first-admin logic: if `role=admin` is requested and no admin exists yet, it grants admin; otherwise it falls back to `viewer`
-- Since this user is the first signup, they will correctly get `admin`
+- Use the database insert tool for all data operations (no migrations needed)
+- Foreign keys will be linked by inserting departments first, then referencing their IDs in faculty/courses/batches
+- All data uses existing enum values (`classroom`, `lab`, `auditorium` for rooms; correct day values)
+- After insertion, you can test: Dashboard stats, CRUD on each page, Teaching Assignments page, and eventually timetable generation
 
