@@ -15,7 +15,7 @@ const statCards = [
 ];
 
 export default function Index() {
-  const { role, profile } = useAuth();
+  const { role, isAdminOrAbove, user } = useAuth();
 
   const counts = statCards.map((card) => {
     const { data } = useQuery({
@@ -31,28 +31,30 @@ export default function Index() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold text-foreground">
-          Welcome, {profile?.display_name ?? "User"}
+          Welcome, {user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? "User"}
         </h1>
         <p className="text-muted-foreground">
-          {role === "admin"
+          {isAdminOrAbove
             ? "Manage your university resources and schedules"
+            : role === "faculty"
+            ? "View your schedule and manage preferences"
             : "View your schedule and preferences"}
         </p>
       </div>
 
-      {role === "admin" && (
+      {isAdminOrAbove && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {counts.map((card) => (
             <Link key={card.label} to={card.link}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <Card className="glass-card hover:border-primary/30 transition-all cursor-pointer group">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
                     {card.label}
                   </CardTitle>
-                  <card.icon className="h-4 w-4 text-muted-foreground" />
+                  <card.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-foreground">{card.count}</div>
