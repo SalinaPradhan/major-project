@@ -230,9 +230,6 @@ Deno.serve(async (req) => {
   try {
     const { schedule_id, population_size = 50, generation_count = 200, mutation_rate = 0.1 } = await req.json();
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fix 12: Mutex — check for running jobs on this schedule
     const { data: runningJobs } = await supabase
