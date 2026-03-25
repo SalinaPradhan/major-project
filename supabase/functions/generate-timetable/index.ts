@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
       .select("id")
       .single();
 
-    const jobId = job?.id;
+    jobId = job?.id;
 
     const [
       { data: assignments },
