@@ -29,7 +29,7 @@ export interface SupportStaff {
   role: 'lab_assistant' | 'technician' | 'admin';
   department: string;
   shift: 'morning' | 'afternoon' | 'full-day';
-  status: 'available' | 'assigned' | 'on-leave';
+  status: 'available' | 'assigned' | 'on_leave';
 }
 
 export interface Asset {

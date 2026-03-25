@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type StatusType = 'available' | 'occupied' | 'maintenance' | 'on-leave' | 'busy' | 'assigned' | 'working' | 'broken';
+type StatusType = 'available' | 'occupied' | 'maintenance' | 'on_leave' | 'busy' | 'assigned' | 'working' | 'broken';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -14,7 +14,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     busy: 'bg-warning/20 text-warning border-warning/30',
     assigned: 'bg-primary/20 text-primary border-primary/30',
     maintenance: 'bg-muted text-muted-foreground border-border',
-    'on-leave': 'bg-muted text-muted-foreground border-border',
+    on_leave: 'bg-muted text-muted-foreground border-border',
     broken: 'bg-destructive/20 text-destructive border-destructive/30',
   };
 
@@ -25,7 +25,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     busy: 'Busy',
     assigned: 'Assigned',
     maintenance: 'Maintenance',
-    'on-leave': 'On Leave',
+    on_leave: 'On Leave',
     broken: 'Broken',
   };
 
