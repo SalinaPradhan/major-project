@@ -12,7 +12,8 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  User
+  User,
+  ClipboardList
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
