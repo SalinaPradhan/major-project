@@ -27,6 +27,7 @@ import Profile from "./pages/Profile";
 import FacultyDashboard from "./pages/FacultyDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import EventScheduler from "./pages/EventScheduler";
+import TeachingAssignments from "./pages/TeachingAssignments";
 
 const queryClient = new QueryClient();
 
