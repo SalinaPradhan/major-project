@@ -222,6 +222,11 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let jobId: string | undefined;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   try {
     const { schedule_id, population_size = 50, generation_count = 200, mutation_rate = 0.1 } = await req.json();
 
