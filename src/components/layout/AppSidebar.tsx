@@ -12,7 +12,8 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  User
+  User,
+  ClipboardList
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ export function AppSidebar() {
         { name: 'Faculty', href: '/faculty', icon: Users },
         { name: 'Courses', href: '/courses', icon: BookOpen },
         { name: 'Batches', href: '/batches', icon: GraduationCap },
+        { name: 'Assignments', href: '/teaching-assignments', icon: ClipboardList },
       ];
 
       items.push(

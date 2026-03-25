@@ -27,6 +27,7 @@ import Profile from "./pages/Profile";
 import FacultyDashboard from "./pages/FacultyDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import EventScheduler from "./pages/EventScheduler";
+import TeachingAssignments from "./pages/TeachingAssignments";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/courses" element={<Courses />} />
               <Route path="/batches" element={<Batches />} />
               <Route path="/departments" element={<Departments />} />
+              <Route path="/teaching-assignments" element={<ProtectedRoute allowedRoles={['admin']}><TeachingAssignments /></ProtectedRoute>} />
 
               <Route path="/staff" element={<ProtectedRoute allowedRoles={['admin']}><Staff /></ProtectedRoute>} />
               <Route path="/assets" element={<ProtectedRoute allowedRoles={['admin']}><Assets /></ProtectedRoute>} />
