@@ -1,57 +1,69 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables, Enums } from "@/integrations/supabase/types";
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { Enums } from '@/integrations/supabase/types';
 
 type AppRole = Enums<"app_role">;
 
 interface AuthContextType {
-  session: Session | null;
   user: User | null;
+  session: Session | null;
   role: AppRole | null;
-  profile: Tables<"profiles"> | null;
   loading: boolean;
+  signUp: (email: string, password: string, fullName: string, selectedRole?: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+  isAdminOrAbove: boolean;
+  isFaculty: boolean;
+  isStudent: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  role: null,
-  profile: null,
-  loading: true,
-  signOut: async () => {},
-});
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
-  const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const fetchUserData = async (userId: string) => {
-    const [roleRes, profileRes] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", userId).single(),
-      supabase.from("profiles").select("*").eq("user_id", userId).single(),
-    ]);
-    if (roleRes.data) setRole(roleRes.data.role);
-    if (profileRes.data) setProfile(profileRes.data);
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return null;
+      }
+
+      return data?.role as AppRole | null;
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
         if (session?.user) {
-          setTimeout(() => fetchUserData(session.user.id), 0);
+          setTimeout(() => {
+            fetchUserRole(session.user.id).then(setRole);
+          }, 0);
         } else {
           setRole(null);
-          setProfile(null);
         }
+
         setLoading(false);
       }
     );
@@ -59,24 +71,114 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+
       if (session?.user) {
-        fetchUserData(session.user.id);
+        fetchUserRole(session.user.id).then(setRole);
       }
+
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setRole(null);
-    setProfile(null);
+  const signUp = async (email: string, password: string, fullName: string, selectedRole?: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+            display_name: fullName,
+            role: selectedRole || 'student',
+          },
+        },
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Sign up failed",
+          description: error.message,
+        });
+        return { error };
+      }
+
+      toast({
+        title: "Account created!",
+        description: "You can now sign in with your credentials.",
+      });
+
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
-  return (
-    <AuthContext.Provider value={{ session, user, role, profile, loading, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Sign in failed",
+          description: error.message,
+        });
+        return { error };
+      }
+
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
+
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setRole(null);
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully.",
+    });
+  };
+
+  const value = {
+    user,
+    session,
+    role,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    isSuperAdmin: role === 'admin',
+    isAdmin: role === 'admin',
+    isAdminOrAbove: role === 'admin',
+    isFaculty: role === 'faculty',
+    isStudent: role === 'student',
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
