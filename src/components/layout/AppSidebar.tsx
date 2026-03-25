@@ -39,6 +39,7 @@ export function AppSidebar() {
         { name: 'Faculty', href: '/faculty', icon: Users },
         { name: 'Courses', href: '/courses', icon: BookOpen },
         { name: 'Batches', href: '/batches', icon: GraduationCap },
+        { name: 'Assignments', href: '/teaching-assignments', icon: ClipboardList },
       ];
 
       items.push(
