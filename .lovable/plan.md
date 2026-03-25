@@ -1,50 +1,28 @@
 
+# Bug Fix Guide — Implementation Status
 
-# Plan: Redesign Event Scheduler with Calendar View
+All fixes from the roadmap have been implemented.
 
-## What Changes
+## Completed Fixes
 
-Replace the current table-only Event Scheduler page with a calendar-based UI inspired by the uploaded venue components. The page will feature:
-
-1. **Calendar grid** showing events on their dates with color-coded dots/bars by event type
-2. **Click-on-date modal** showing that day's events with details (time, room, host) and a "Book This Date" button for admin/faculty
-3. **Type filter + legend** showing color codes for exam, seminar, workshop, meeting, other
-4. **Table view toggle** — keep the existing table as an alternative view via tabs (Calendar / List)
-5. **Role-based actions** — admin/faculty see "Add Event" and edit/delete; students see read-only
-
-## Files to Create/Modify
-
-### New: `src/components/events/EventCalendar.tsx`
-Adapted from the uploaded `VenueCalendar.tsx`:
-- Replace `VenueBooking` types with the existing `Event` type from `useEvents`
-- Replace `VENUE_COLORS`/`VENUE_LABELS` with event type colors (exam=red, seminar=blue, workshop=amber, meeting=green, other=gray)
-- Calendar grid with month navigation, day cells showing event titles
-- Click a day → dialog showing event cards with time, room, description
-- "Add Event" button in the day dialog (hidden for students via `readOnly` prop)
-
-### Modified: `src/pages/EventScheduler.tsx`
-- Add tabs: "Calendar" (default) and "List" (existing table)
-- Calendar tab renders `EventCalendar` with events from `useEvents`
-- Pass `readOnly={!canManage}` to hide action buttons for students
-- Keep existing table view under "List" tab
-- Clicking "Add Event" from calendar opens `EventFormDialog` with pre-filled date
-
-### Modified: `src/types/venue.ts` (no changes needed)
-The venue types stay as-is. We'll create separate event-type color maps in the calendar component.
-
-## Event Type Color Map
-```text
-exam       → hsl(0, 84%, 60%)    red
-seminar    → hsl(221, 83%, 53%)  blue  
-workshop   → hsl(38, 92%, 50%)   amber
-meeting    → hsl(142, 71%, 45%)  green
-other      → hsl(240, 5%, 65%)   gray
-```
-
-## Technical Details
-- No database changes needed — uses existing `events` table
-- No new hooks — reuses `useEvents()` 
-- Calendar component maps `Event[]` by `event_date` field, grouped per day
-- Day click dialog shows event cards styled like the uploaded venue cards (colored borders, icons for time/room)
-- Mobile responsive: calendar cells shrink, dialog shows scrollable event list
-
+| Fix | Description | Status |
+|-----|-------------|--------|
+| 1 | Migration conflicts | DONE (Cloud handles) |
+| 2 | teaching_assignments table | DONE (pre-existing) |
+| 3 | Load-aware faculty in GA | DONE (uses teaching_assignments) |
+| 4 | Faculty workload tracking | DONE — `current_load` column + GA writeback |
+| 5 | GA early termination fix | DONE — stagnation detection (20 gen limit) |
+| 6 | Staff role normalization | N/A (no support_staff table) |
+| 7 | Crossover length guard | DONE — uniform crossover + length check |
+| 8 | Batch time window | N/A (no batch time columns) |
+| 9 | Server-side conflict RPC | DONE — `check_schedule_conflicts` function |
+| 10 | Composite indexes | DONE — 3 indexes on schedule_entries |
+| 11 | Schedule versioning | DONE — `schedule_versions` table + snapshot logic |
+| 12 | Concurrent GA mutex | DONE — `generation_jobs` table + 409 guard |
+| 13 | Enum inconsistency | DONE — underscore format in types + StatusBadge |
+| 14 | Mock data removal | DONE (no mock data existed) |
+| 15 | Pagination hook | DONE — `usePaginatedQuery.ts` created |
+| 16 | PDF export | Deferred (no PDF export exists yet) |
+| 17 | Academic calendar | DONE — table created with RLS |
+| 18 | Room utilization | DONE — `utilization_target` column + hook |
+| 19 | GA progress streaming | DONE — realtime via generation_jobs + Progress UI |
