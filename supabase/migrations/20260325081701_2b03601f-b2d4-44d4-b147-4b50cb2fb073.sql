@@ -1,0 +1,1 @@
+ALTER TABLE public.faculty ADD COLUMN IF NOT EXISTS current_load integer DEFAULT 0;
