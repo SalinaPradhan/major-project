@@ -408,11 +408,8 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     // Fix 12: Mark job failed on error
-    if (typeof jobId !== "undefined" && jobId) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const sb = createClient(supabaseUrl, supabaseKey);
-      await sb.from("generation_jobs").update({ status: "failed", error_message: error.message, completed_at: new Date().toISOString() }).eq("id", jobId);
+    if (jobId) {
+      await supabase.from("generation_jobs").update({ status: "failed", error_message: error.message, completed_at: new Date().toISOString() }).eq("id", jobId);
     }
     return new Response(
       JSON.stringify({ error: error.message }),
