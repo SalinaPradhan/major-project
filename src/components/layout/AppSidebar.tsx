@@ -7,6 +7,7 @@ import {
   BookOpen,
   GraduationCap,
   Calendar,
+  CalendarDays,
   Bell,
   Settings,
   Brain,
@@ -45,6 +46,7 @@ export function AppSidebar() {
       items.push(
         { name: 'Support Staff', href: '/staff', icon: UserCog },
         { name: 'Assets', href: '/assets', icon: Package },
+        { name: 'Events', href: '/event-scheduler', icon: CalendarDays },
       );
 
       return items;
@@ -56,6 +58,7 @@ export function AppSidebar() {
         { name: 'My Dashboard', href: '/my-dashboard', icon: User },
         { name: 'Rooms', href: '/rooms', icon: DoorOpen },
         { name: 'Courses', href: '/courses', icon: BookOpen },
+        { name: 'Events', href: '/event-scheduler', icon: CalendarDays },
       ];
     }
 
@@ -63,6 +66,7 @@ export function AppSidebar() {
       return [
         ...baseItems,
         { name: 'My Schedule', href: '/student-dashboard', icon: GraduationCap },
+        { name: 'Events', href: '/event-scheduler', icon: CalendarDays },
       ];
     }
 

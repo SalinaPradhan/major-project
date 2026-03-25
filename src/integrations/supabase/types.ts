@@ -126,6 +126,59 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_time: string
+          event_date: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          room_id: string | null
+          start_time: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_time: string
+          event_date: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          room_id?: string | null
+          start_time: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_time?: string
+          event_date?: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          room_id?: string | null
+          start_time?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faculty: {
         Row: {
           created_at: string
@@ -519,6 +572,7 @@ export type Database = {
         | "thursday"
         | "friday"
         | "saturday"
+      event_type: "exam" | "seminar" | "workshop" | "meeting" | "other"
       room_type: "classroom" | "lab" | "auditorium"
       schedule_status: "draft" | "published" | "archived"
     }
@@ -657,6 +711,7 @@ export const Constants = {
         "friday",
         "saturday",
       ],
+      event_type: ["exam", "seminar", "workshop", "meeting", "other"],
       room_type: ["classroom", "lab", "auditorium"],
       schedule_status: ["draft", "published", "archived"],
     },
