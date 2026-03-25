@@ -35,6 +35,7 @@ export default function Profile() {
     } catch (e: any) { toast.error(e.message); }
     finally { setSaving(false); }
   };
+  const initials = (displayName || 'U').slice(0, 2).toUpperCase();
 
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl">
