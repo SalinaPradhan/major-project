@@ -317,6 +317,16 @@ Deno.serve(async (req) => {
         generationsWithoutImprovement++;
       }
 
+      // Fix 19: Update progress every 10 generations
+      if (jobId && gen % 10 === 0) {
+        await supabase.from("generation_jobs").update({
+          current_generation: gen,
+          total_generations: generation_count,
+          current_fitness: population[0].score,
+          current_violations: population[0].hardViolations,
+        }).eq("id", jobId);
+      }
+
       // Only terminate early if zero hard violations AND stagnated
       if (population[0].hardViolations === 0 && generationsWithoutImprovement >= STAGNATION_LIMIT) {
         break;
