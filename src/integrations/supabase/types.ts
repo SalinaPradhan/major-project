@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_calendar: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          event_type: Database["public"]["Enums"]["calendar_event_type"]
+          excludes_scheduling: boolean
+          id: string
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          excludes_scheduling?: boolean
+          id?: string
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          excludes_scheduling?: boolean
+          id?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       batches: {
         Row: {
           created_at: string
@@ -368,6 +404,7 @@ export type Database = {
           name: string
           room_type: Database["public"]["Enums"]["room_type"]
           updated_at: string
+          utilization_target: number | null
         }
         Insert: {
           building?: string | null
@@ -379,6 +416,7 @@ export type Database = {
           name: string
           room_type?: Database["public"]["Enums"]["room_type"]
           updated_at?: string
+          utilization_target?: number | null
         }
         Update: {
           building?: string | null
@@ -390,6 +428,7 @@ export type Database = {
           name?: string
           room_type?: Database["public"]["Enums"]["room_type"]
           updated_at?: string
+          utilization_target?: number | null
         }
         Relationships: []
       }
@@ -660,6 +699,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "viewer" | "faculty" | "student"
+      calendar_event_type: "holiday" | "exam_period" | "break" | "special"
       day_of_week:
         | "monday"
         | "tuesday"
@@ -799,6 +839,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "viewer", "faculty", "student"],
+      calendar_event_type: ["holiday", "exam_period", "break", "special"],
       day_of_week: [
         "monday",
         "tuesday",
