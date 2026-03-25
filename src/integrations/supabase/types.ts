@@ -305,29 +305,41 @@ export type Database = {
         Row: {
           completed_at: string | null
           created_at: string
+          current_fitness: number | null
+          current_generation: number | null
+          current_violations: number | null
           error_message: string | null
           id: string
           schedule_id: string
           started_at: string | null
           status: Database["public"]["Enums"]["job_status"]
+          total_generations: number | null
         }
         Insert: {
           completed_at?: string | null
           created_at?: string
+          current_fitness?: number | null
+          current_generation?: number | null
+          current_violations?: number | null
           error_message?: string | null
           id?: string
           schedule_id: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          total_generations?: number | null
         }
         Update: {
           completed_at?: string | null
           created_at?: string
+          current_fitness?: number | null
+          current_generation?: number | null
+          current_violations?: number | null
           error_message?: string | null
           id?: string
           schedule_id?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          total_generations?: number | null
         }
         Relationships: [
           {
