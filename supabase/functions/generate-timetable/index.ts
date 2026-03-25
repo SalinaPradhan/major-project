@@ -229,6 +229,29 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Fix 12: Mutex — check for running jobs on this schedule
+    const { data: runningJobs } = await supabase
+      .from("generation_jobs")
+      .select("id")
+      .eq("schedule_id", schedule_id)
+      .eq("status", "running");
+
+    if (runningJobs && runningJobs.length > 0) {
+      return new Response(
+        JSON.stringify({ error: "A generation is already running for this schedule. Please wait." }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Create job record
+    const { data: job } = await supabase
+      .from("generation_jobs")
+      .insert({ schedule_id, status: "running" })
+      .select("id")
+      .single();
+
+    const jobId = job?.id;
+
     const [
       { data: assignments },
       { data: rooms },
