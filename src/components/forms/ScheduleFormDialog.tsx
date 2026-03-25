@@ -75,10 +75,6 @@ export function ScheduleFormDialog({ open, onOpenChange, schedule }: ScheduleFor
 
       if (isEditing && schedule) {
         await updateSchedule.mutateAsync({ id: schedule.id, ...payload });
-          population_size: values.population_size ?? null,
-          generation_count: values.generation_count ?? null,
-          mutation_rate: values.mutation_rate ?? null,
-        });
         toast.success('Schedule updated successfully');
       } else {
         await createSchedule.mutateAsync(payload);
