@@ -558,6 +558,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_schedule_conflicts: {
+        Args: { p_schedule_id: string }
+        Returns: {
+          conflict_type: string
+          day: string
+          entity_name: string
+          entry_count: number
+          time_slot_label: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
