@@ -70,13 +70,17 @@ export function RoomFormDialog({ open, onOpenChange, room }: RoomFormDialogProps
 
   const onSubmit = async (values: RoomFormValues) => {
     try {
+      const payload = {
+        name: values.name,
+        room_type: values.room_type,
+        capacity: values.capacity,
+        has_projector: values.has_projector,
+        building: values.building || null,
+        floor: values.floor ?? null,
+      };
+
       if (isEditing && room) {
-        await updateRoom.mutateAsync({
-          id: room.id,
-          ...values,
-          building: values.building || null,
-          floor: values.floor ?? null,
-        });
+        await updateRoom.mutateAsync({ id: room.id, ...payload });
         toast.success('Room updated successfully');
       } else {
         await createRoom.mutateAsync({
