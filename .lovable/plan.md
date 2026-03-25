@@ -1,55 +1,42 @@
 
 
-# Plan: Recreate Original GitHub Project
+# Round 5: Final Routing, Cleanup & Polish
 
-Your original project (`access-my-code`) has a much richer architecture than what currently exists in this remix. Here's what needs to change to match it.
+## Current State
+Rounds 1-4 are complete. The project has all pages, components, hooks, and form dialogs created. What remains is cleanup and verification.
 
-## What's Different
+## What Needs to Be Done
 
-Your original has:
-- **4 roles**: `super_admin`, `admin`, `faculty`, `student` (current project only has `admin`, `faculty`, `student`)
-- **18 pages** vs the current 7: missing Alerts, Assets, EventScheduler, FacultyDashboard, StudentDashboard, Staff, Scheduler, Settings, ResetPassword, Profile, Timetable
-- **20+ custom hooks** vs 2: useAlerts, useAssets, useBatches, useConflictCheck, useCoordinatorAssignments, useCourses, useDashboardStats, useFaculty, useFacultyAvailability, useGenerateTimetable, useResourceFilters, useRooms, useSchedules, useStaff, useSwapRequests, useVenueBookings, etc.
-- **8 component directories**: auth, dashboard, forms, layout, resources, settings, timetable, venue
-- **Type definitions**: `types/index.ts`, `types/timetable.ts`, `types/venue.ts`, `types/facultyAvailability.ts`
-- **Different layout**: `AppSidebar` with collapsible nav, `Header` component with search/bell/UserMenu, role-based nav with secondary items (AI Scheduler, Alerts, Settings)
-- **Dashboard components**: StatCard, AlertsPanel, ResourceUtilization, QuickActions, TodaySchedulePreview, SwapRequestsPanel
-- **Resource components**: ResourceTable, ResourceFilters, StatusBadge
-- **Form dialogs**: RoomFormDialog, FacultyFormDialog, FacultyAvailabilityDialog, ScheduleFormDialog, DeleteConfirmDialog
+### 1. Remove Duplicate/Stale Files
+- Delete `src/components/MainLayout.tsx` (old version) -- the active one is `src/components/layout/MainLayout.tsx`, but `App.tsx` imports from `@/components/MainLayout` which points to the root-level one that uses `<Outlet />`. This is actually the correct one being used. The `layout/MainLayout.tsx` is the stale duplicate.
+- Delete `src/components/NavLink.tsx` (unused legacy component)
+- Delete `src/components/ProtectedRoute.tsx` (unused, replaced by `src/components/auth/ProtectedRoute.tsx`)
 
-## Approach
+### 2. Fix Role Enum Mismatch
+The database has `app_role: "admin" | "viewer" | "faculty" | "student"` -- note `viewer` not `super_admin`. The `AuthContext` references `super_admin` which does not exist in the enum. Need to:
+- Update `AuthContext.tsx` to use `viewer` instead of `super_admin`, OR
+- Add a database migration to replace `viewer` with `super_admin` in the enum (depends on your intent)
+- Update `isSuperAdmin` and `isAdminOrAbove` helpers accordingly
 
-Since this is a large codebase (~50+ files), I'll recreate it in batches, reading each file from GitHub and writing it here. Due to message size limits, this will take **4-5 rounds**.
+### 3. Fix `super_admin` References in Sidebar & Routes
+- `AppSidebar.tsx` likely references `super_admin` role for nav visibility -- update to match actual enum
+- Route guards in `App.tsx` that use `allowedRoles` with `'admin'` should also include the correct elevated role
 
-### Round 1: Foundation
-- Rewrite `AuthContext.tsx` to match original (add `super_admin`, helper booleans like `isAdminOrAbove`, `signUp` method)
-- Create `types/index.ts`, `types/timetable.ts`, `types/venue.ts`, `types/facultyAvailability.ts`
-- Create `components/layout/AppSidebar.tsx`, `Header.tsx`, `UserMenu.tsx`, `MainLayout.tsx`
-- Rewrite `components/auth/ProtectedRoute.tsx` (add `redirectStudents`, super_admin logic)
-- Rewrite `pages/Auth.tsx` (add role selection cards, forgot password, validation)
+### 4. Add Missing Edge Function for Timetable Generation
+- Create `supabase/functions/generate-timetable/index.ts` -- the `useGenerateTimetable` hook calls this endpoint but it doesn't exist yet
+- Implements the Genetic Algorithm scheduler logic (population init, crossover, mutation, fitness evaluation)
 
-### Round 2: Shared Components & Hooks (Part 1)
-- Create `components/dashboard/*` (StatCard, AlertsPanel, ResourceUtilization, QuickActions, TodaySchedulePreview, SwapRequestsPanel)
-- Create `components/resources/*` (ResourceTable, ResourceFilters, StatusBadge)
-- Create hooks: useRooms, useFaculty, useCourses, useBatches, useStaff, useAssets, useResourceFilters, useDashboardStats
+### 5. Verify All Imports Compile
+- Scan for any broken imports referencing files that don't exist
+- Ensure all hook files export what the pages expect
 
-### Round 3: Form Dialogs & More Hooks
-- Create `components/forms/*` (RoomFormDialog, FacultyFormDialog, FacultyAvailabilityDialog, ScheduleFormDialog, DeleteConfirmDialog)
-- Create hooks: useAlerts, useSchedules, useSwapRequests, useConflictCheck, useCoordinatorAssignments, useFacultyAvailability, useGenerateTimetable, useStudentSchedules, useVenueBookings, useUserManagement
+## Technical Details
 
-### Round 4: Pages
-- Rewrite pages to match original: Index, Rooms, Faculty, Courses, Batches
-- Create missing pages: Staff, Assets, Timetable, Scheduler, FacultyDashboard, StudentDashboard, Alerts, Settings, Profile, ResetPassword, EventScheduler
-- Create timetable components (ConfigurableTimetable, TimetableConfigPanel)
-- Create venue/settings components
+**Role enum fix**: The simplest path is to update all frontend code to treat `viewer` as the "super admin" equivalent, since changing the DB enum is more disruptive. Alternatively, run a migration to rename `viewer` to `super_admin`.
 
-### Round 5: Routing & Polish
-- Update `App.tsx` to match original routing with all role guards
-- Verify all imports resolve correctly
-- Fix any build errors
+**Edge function**: The generate-timetable function will accept schedule config (population size, mutation rate, generations) and query rooms, faculty, batches, teaching_assignments, time_slots, and faculty_preferences to produce schedule_entries.
 
-## Technical Notes
-- Each file will be read from your GitHub repo and recreated here with the exact same code
-- The database schema in this project may differ from your original -- I'll adapt the hooks to work with the current schema
-- Edge functions from the original will also need to be recreated
+**Files to delete**: `src/components/MainLayout.tsx` (layout version is unused), `src/components/NavLink.tsx`, `src/components/ProtectedRoute.tsx`
+
+**Estimated scope**: ~5-8 file edits + 1 new edge function + 1 optional migration
 
