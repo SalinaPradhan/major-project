@@ -1,4 +1,4 @@
-import { Clock, MapPin, User } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function TodaySchedulePreview() {

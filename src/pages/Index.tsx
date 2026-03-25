@@ -17,7 +17,7 @@ export default function Index() {
   const statItems = [
     { label: 'Departments', value: stats?.departments ?? 0, icon: Building2, variant: 'default' as const, link: '/departments' },
     { label: 'Faculty', value: stats?.faculty ?? 0, icon: Users, variant: 'primary' as const, link: '/faculty' },
-    { label: 'Courses', value: stats?.courses ?? 0, icon: BookOpen, variant: 'success' as const, link: '/courses' },
+    { label: 'Courses', value: stats?.courses ?? 0, icon: BookOpen, variant: 'accent' as const, link: '/courses' },
     { label: 'Rooms', value: stats?.rooms ?? 0, icon: DoorOpen, variant: 'warning' as const, link: '/rooms' },
     { label: 'Batches', value: stats?.batches ?? 0, icon: GraduationCap, variant: 'default' as const, link: '/batches' },
     { label: 'Schedules', value: stats?.schedules ?? 0, icon: Calendar, variant: 'primary' as const, link: '/scheduler' },
