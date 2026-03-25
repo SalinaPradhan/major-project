@@ -4,7 +4,7 @@ import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import { SwapRequestsPanel } from '@/components/dashboard/SwapRequestsPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, BookOpen } from 'lucide-react';
+import { Calendar, Clock, BookOpen, CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function FacultyDashboard() {
@@ -18,7 +18,7 @@ export default function FacultyDashboard() {
         <p className="text-muted-foreground mt-1">Welcome back, {displayName}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">My Schedule</CardTitle>
@@ -44,6 +44,15 @@ export default function FacultyDashboard() {
           </CardHeader>
           <CardContent>
             <Link to="/courses"><Button variant="outline" className="w-full">View Courses</Button></Link>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Events</CardTitle>
+            <CalendarDays className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <Link to="/event-scheduler"><Button variant="outline" className="w-full">View Events</Button></Link>
           </CardContent>
         </Card>
       </div>

@@ -58,6 +58,7 @@ export function AppSidebar() {
         { name: 'My Dashboard', href: '/my-dashboard', icon: User },
         { name: 'Rooms', href: '/rooms', icon: DoorOpen },
         { name: 'Courses', href: '/courses', icon: BookOpen },
+        { name: 'Events', href: '/event-scheduler', icon: CalendarDays },
       ];
     }
 
@@ -65,6 +66,7 @@ export function AppSidebar() {
       return [
         ...baseItems,
         { name: 'My Schedule', href: '/student-dashboard', icon: GraduationCap },
+        { name: 'Events', href: '/event-scheduler', icon: CalendarDays },
       ];
     }
 

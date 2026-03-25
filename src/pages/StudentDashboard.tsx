@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { TodaySchedulePreview } from '@/components/dashboard/TodaySchedulePreview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, BookOpen } from 'lucide-react';
+import { Calendar, BookOpen, CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function StudentDashboard() {
@@ -15,7 +15,7 @@ export default function StudentDashboard() {
         <h1 className="text-3xl font-bold text-foreground">Student Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome, {displayName}</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card className="glass-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">My Timetable</CardTitle>
@@ -32,6 +32,15 @@ export default function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <Link to="/courses"><Button variant="outline" className="w-full">View Courses</Button></Link>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming Events</CardTitle>
+            <CalendarDays className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <Link to="/event-scheduler"><Button variant="outline" className="w-full">View Events</Button></Link>
           </CardContent>
         </Card>
       </div>

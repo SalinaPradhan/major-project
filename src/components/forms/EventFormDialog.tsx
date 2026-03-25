@@ -25,7 +25,7 @@ const EVENT_TYPES = [
 ] as const;
 
 export function EventFormDialog({ open, onOpenChange, onSubmit, event, isLoading }: EventFormDialogProps) {
-  const { rooms } = useRooms();
+  const { data: rooms = [] } = useRooms();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [eventType, setEventType] = useState<EventInsert['event_type']>('other');
