@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_calendar: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          event_type: Database["public"]["Enums"]["calendar_event_type"]
+          excludes_scheduling: boolean
+          id: string
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          excludes_scheduling?: boolean
+          id?: string
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          excludes_scheduling?: boolean
+          id?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       batches: {
         Row: {
           created_at: string
@@ -182,6 +218,7 @@ export type Database = {
       faculty: {
         Row: {
           created_at: string
+          current_load: number | null
           department_id: string | null
           email: string | null
           id: string
@@ -192,6 +229,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_load?: number | null
           department_id?: string | null
           email?: string | null
           id?: string
@@ -202,6 +240,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_load?: number | null
           department_id?: string | null
           email?: string | null
           id?: string
@@ -258,6 +297,56 @@ export type Database = {
             columns: ["time_slot_id"]
             isOneToOne: false
             referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generation_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_fitness: number | null
+          current_generation: number | null
+          current_violations: number | null
+          error_message: string | null
+          id: string
+          schedule_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          total_generations: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_fitness?: number | null
+          current_generation?: number | null
+          current_violations?: number | null
+          error_message?: string | null
+          id?: string
+          schedule_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          total_generations?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_fitness?: number | null
+          current_generation?: number | null
+          current_violations?: number | null
+          error_message?: string | null
+          id?: string
+          schedule_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          total_generations?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
             referencedColumns: ["id"]
           },
         ]
@@ -327,6 +416,7 @@ export type Database = {
           name: string
           room_type: Database["public"]["Enums"]["room_type"]
           updated_at: string
+          utilization_target: number | null
         }
         Insert: {
           building?: string | null
@@ -338,6 +428,7 @@ export type Database = {
           name: string
           room_type?: Database["public"]["Enums"]["room_type"]
           updated_at?: string
+          utilization_target?: number | null
         }
         Update: {
           building?: string | null
@@ -349,6 +440,7 @@ export type Database = {
           name?: string
           room_type?: Database["public"]["Enums"]["room_type"]
           updated_at?: string
+          utilization_target?: number | null
         }
         Relationships: []
       }
@@ -411,9 +503,51 @@ export type Database = {
           },
         ]
       }
+      schedule_versions: {
+        Row: {
+          created_at: string
+          entries_snapshot: Json
+          fitness_score: number | null
+          hard_constraint_violations: number | null
+          id: string
+          schedule_id: string
+          soft_constraint_score: number | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          entries_snapshot?: Json
+          fitness_score?: number | null
+          hard_constraint_violations?: number | null
+          id?: string
+          schedule_id: string
+          soft_constraint_score?: number | null
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          entries_snapshot?: Json
+          fitness_score?: number | null
+          hard_constraint_violations?: number | null
+          id?: string
+          schedule_id?: string
+          soft_constraint_score?: number | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_versions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedules: {
         Row: {
           created_at: string
+          current_version: number | null
           fitness_score: number | null
           generation_count: number | null
           hard_constraint_violations: number | null
@@ -427,6 +561,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_version?: number | null
           fitness_score?: number | null
           generation_count?: number | null
           hard_constraint_violations?: number | null
@@ -440,6 +575,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_version?: number | null
           fitness_score?: number | null
           generation_count?: number | null
           hard_constraint_violations?: number | null
@@ -555,6 +691,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_schedule_conflicts: {
+        Args: { p_schedule_id: string }
+        Returns: {
+          conflict_type: string
+          day: string
+          entity_name: string
+          entry_count: number
+          time_slot_label: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -565,6 +711,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "viewer" | "faculty" | "student"
+      calendar_event_type: "holiday" | "exam_period" | "break" | "special"
       day_of_week:
         | "monday"
         | "tuesday"
@@ -573,6 +720,7 @@ export type Database = {
         | "friday"
         | "saturday"
       event_type: "exam" | "seminar" | "workshop" | "meeting" | "other"
+      job_status: "pending" | "running" | "completed" | "failed"
       room_type: "classroom" | "lab" | "auditorium"
       schedule_status: "draft" | "published" | "archived"
     }
@@ -703,6 +851,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "viewer", "faculty", "student"],
+      calendar_event_type: ["holiday", "exam_period", "break", "special"],
       day_of_week: [
         "monday",
         "tuesday",
@@ -712,6 +861,7 @@ export const Constants = {
         "saturday",
       ],
       event_type: ["exam", "seminar", "workshop", "meeting", "other"],
+      job_status: ["pending", "running", "completed", "failed"],
       room_type: ["classroom", "lab", "auditorium"],
       schedule_status: ["draft", "published", "archived"],
     },

@@ -19,17 +19,17 @@ export interface Faculty {
   subjects: string[];
   maxLoad: number;
   currentLoad: number;
-  status: 'available' | 'on-leave' | 'busy';
+  status: 'available' | 'on_leave' | 'busy';
 }
 
 export interface SupportStaff {
   id: string;
   name: string;
   email?: string;
-  role: 'lab-assistant' | 'technician' | 'admin';
+  role: 'lab_assistant' | 'technician' | 'admin';
   department: string;
   shift: 'morning' | 'afternoon' | 'full-day';
-  status: 'available' | 'assigned' | 'on-leave';
+  status: 'available' | 'assigned' | 'on_leave';
 }
 
 export interface Asset {

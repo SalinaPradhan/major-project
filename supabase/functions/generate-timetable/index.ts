@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// --- Types ---
+
 interface Gene {
   teaching_assignment_id: string;
   room_id: string;
@@ -40,7 +42,7 @@ interface FacultyPref {
   faculty_id: string;
   day: string;
   time_slot_id: string;
-  preference: number; // 0=unavailable, 1=available, 2=preferred
+  preference: number;
 }
 
 interface Faculty {
@@ -49,10 +51,21 @@ interface Faculty {
   max_hours_per_week: number;
 }
 
-const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+interface ExpandedSlot {
+  ta_id: string;
+  is_lab: boolean;
+  faculty_id: string;
+  batch_id: string;
+  batch_strength: number;
+}
 
-function expandAssignments(assignments: TeachingAssignment[]): { ta_id: string; is_lab: boolean; faculty_id: string; batch_id: string; batch_strength: number }[] {
-  const expanded: { ta_id: string; is_lab: boolean; faculty_id: string; batch_id: string; batch_strength: number }[] = [];
+const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const STAGNATION_LIMIT = 20;
+
+// --- Helper Functions ---
+
+function expandAssignments(assignments: TeachingAssignment[]): ExpandedSlot[] {
+  const expanded: ExpandedSlot[] = [];
   for (const a of assignments) {
     const hours = a.is_lab ? a.course.lab_hours : a.course.lecture_hours;
     for (let i = 0; i < hours; i++) {
@@ -69,7 +82,7 @@ function expandAssignments(assignments: TeachingAssignment[]): { ta_id: string; 
 }
 
 function randomChromosome(
-  slots: { ta_id: string; is_lab: boolean; batch_strength: number }[],
+  slots: ExpandedSlot[],
   rooms: Room[],
   timeSlots: TimeSlot[],
 ): Chromosome {
@@ -91,7 +104,7 @@ function randomChromosome(
 
 function fitness(
   chromosome: Chromosome,
-  expandedSlots: { ta_id: string; faculty_id: string; batch_id: string; is_lab: boolean; batch_strength: number }[],
+  expandedSlots: ExpandedSlot[],
   rooms: Room[],
   facultyMap: Map<string, Faculty>,
   prefMap: Map<string, number>,
@@ -100,8 +113,6 @@ function fitness(
   let softScore = 0;
 
   const roomMap = new Map(rooms.map((r) => [r.id, r]));
-
-  // Build slot keys for conflict detection
   const roomSlotMap = new Map<string, number>();
   const facultySlotMap = new Map<string, number>();
   const batchSlotMap = new Map<string, number>();
@@ -113,43 +124,33 @@ function fitness(
     const slot = expandedSlots[i];
     const key_time = `${gene.day}-${gene.time_slot_id}`;
 
-    // Room conflict
     const roomKey = `room-${gene.room_id}-${key_time}`;
     roomSlotMap.set(roomKey, (roomSlotMap.get(roomKey) || 0) + 1);
 
-    // Faculty conflict
     const facKey = `fac-${slot.faculty_id}-${key_time}`;
     facultySlotMap.set(facKey, (facultySlotMap.get(facKey) || 0) + 1);
 
-    // Batch conflict
     const batchKey = `batch-${slot.batch_id}-${key_time}`;
     batchSlotMap.set(batchKey, (batchSlotMap.get(batchKey) || 0) + 1);
 
-    // Room capacity check
     const room = roomMap.get(gene.room_id);
     if (room && room.capacity < slot.batch_strength) hardViolations += 1;
-
-    // Lab in non-lab room
     if (slot.is_lab && room && room.room_type !== "lab") hardViolations += 1;
 
-    // Faculty hours tracking
     const facDayKey = `${slot.faculty_id}-${gene.day}`;
     facultyDayHours.set(facDayKey, (facultyDayHours.get(facDayKey) || 0) + 1);
     facultyWeekHours.set(slot.faculty_id, (facultyWeekHours.get(slot.faculty_id) || 0) + 1);
 
-    // Soft: faculty preference
     const prefKey = `${slot.faculty_id}-${gene.day}-${gene.time_slot_id}`;
     const pref = prefMap.get(prefKey);
-    if (pref === 0) hardViolations += 2; // unavailable = hard constraint
-    if (pref === 2) softScore += 1; // preferred slot bonus
+    if (pref === 0) hardViolations += 2;
+    if (pref === 2) softScore += 1;
   }
 
-  // Count conflicts (value > 1 means overlap)
   for (const [, count] of roomSlotMap) if (count > 1) hardViolations += (count - 1);
   for (const [, count] of facultySlotMap) if (count > 1) hardViolations += (count - 1);
   for (const [, count] of batchSlotMap) if (count > 1) hardViolations += (count - 1);
 
-  // Faculty max hours
   for (const [key, hours] of facultyDayHours) {
     const facId = key.split("-")[0];
     const fac = facultyMap.get(facId);
@@ -164,9 +165,10 @@ function fitness(
   return { score, hardViolations, softScore };
 }
 
+// Fix 7: Uniform crossover with length guard
 function crossover(a: Chromosome, b: Chromosome): Chromosome {
-  const point = Math.floor(Math.random() * a.length);
-  return [...a.slice(0, point), ...b.slice(point)];
+  if (a.length !== b.length) return [...a];
+  return a.map((geneA, i) => (Math.random() < 0.5 ? geneA : b[i]));
 }
 
 function mutate(
@@ -174,7 +176,7 @@ function mutate(
   rate: number,
   rooms: Room[],
   timeSlots: TimeSlot[],
-  expandedSlots: { is_lab: boolean; batch_strength: number }[],
+  expandedSlots: ExpandedSlot[],
 ): Chromosome {
   const nonBreakSlots = timeSlots.filter((ts) => !ts.is_break);
   return chromosome.map((gene, i) => {
@@ -203,19 +205,55 @@ function tournamentSelect(population: { chromosome: Chromosome; score: number }[
   return best.chromosome;
 }
 
+// Fix 4: Compute per-faculty workload from best chromosome
+function computeFacultyWorkload(chromosome: Chromosome, expandedSlots: ExpandedSlot[]): Map<string, number> {
+  const workload = new Map<string, number>();
+  for (let i = 0; i < chromosome.length; i++) {
+    const fid = expandedSlots[i].faculty_id;
+    workload.set(fid, (workload.get(fid) || 0) + 1);
+  }
+  return workload;
+}
+
+// --- Main Handler ---
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let jobId: string | undefined;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   try {
     const { schedule_id, population_size = 50, generation_count = 200, mutation_rate = 0.1 } = await req.json();
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all data
+    // Fix 12: Mutex — check for running jobs on this schedule
+    const { data: runningJobs } = await supabase
+      .from("generation_jobs")
+      .select("id")
+      .eq("schedule_id", schedule_id)
+      .eq("status", "running");
+
+    if (runningJobs && runningJobs.length > 0) {
+      return new Response(
+        JSON.stringify({ error: "A generation is already running for this schedule. Please wait." }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Create job record
+    const { data: job } = await supabase
+      .from("generation_jobs")
+      .insert({ schedule_id, status: "running" })
+      .select("id")
+      .single();
+
+    jobId = job?.id;
+
     const [
       { data: assignments },
       { data: rooms },
@@ -248,13 +286,16 @@ Deno.serve(async (req) => {
       return { chromosome: chr, score: f.score, hardViolations: f.hardViolations, softScore: f.softScore };
     });
 
+    // Fix 5: Stagnation detection
+    let bestScoreEver = -Infinity;
+    let generationsWithoutImprovement = 0;
+
     // Evolve
     for (let gen = 0; gen < generation_count; gen++) {
       const newPop = [];
 
-      // Elitism: keep best
       population.sort((a, b) => b.score - a.score);
-      newPop.push(population[0]);
+      newPop.push(population[0]); // Elitism
 
       while (newPop.length < population_size) {
         const parentA = tournamentSelect(population);
@@ -266,14 +307,59 @@ Deno.serve(async (req) => {
       }
 
       population = newPop;
+      population.sort((a, b) => b.score - a.score);
 
-      // Early termination if perfect
-      if (population[0].hardViolations === 0) break;
+      // Fix 5: Track stagnation
+      if (population[0].score > bestScoreEver) {
+        bestScoreEver = population[0].score;
+        generationsWithoutImprovement = 0;
+      } else {
+        generationsWithoutImprovement++;
+      }
+
+      // Fix 19: Update progress every 10 generations
+      if (jobId && gen % 10 === 0) {
+        await supabase.from("generation_jobs").update({
+          current_generation: gen,
+          total_generations: generation_count,
+          current_fitness: population[0].score,
+          current_violations: population[0].hardViolations,
+        }).eq("id", jobId);
+      }
+
+      // Only terminate early if zero hard violations AND stagnated
+      if (population[0].hardViolations === 0 && generationsWithoutImprovement >= STAGNATION_LIMIT) {
+        break;
+      }
     }
 
     // Best solution
     population.sort((a, b) => b.score - a.score);
     const best = population[0];
+
+    // Fix 11: Save version snapshot before overwriting
+    const { data: currentSchedule } = await supabase
+      .from("schedules")
+      .select("current_version")
+      .eq("id", schedule_id)
+      .single();
+
+    const newVersion = (currentSchedule?.current_version ?? 0) + 1;
+
+    // Snapshot old entries before deleting
+    const { data: oldEntries } = await supabase
+      .from("schedule_entries")
+      .select("*")
+      .eq("schedule_id", schedule_id);
+
+    if (oldEntries && oldEntries.length > 0) {
+      await supabase.from("schedule_versions").insert({
+        schedule_id,
+        version_number: currentSchedule?.current_version ?? 0,
+        fitness_score: null,
+        entries_snapshot: oldEntries,
+      });
+    }
 
     // Delete old entries for this schedule
     await supabase.from("schedule_entries").delete().eq("schedule_id", schedule_id);
@@ -292,7 +378,7 @@ Deno.serve(async (req) => {
       if (insertError) throw insertError;
     }
 
-    // Update schedule metadata
+    // Update schedule metadata with version
     await supabase
       .from("schedules")
       .update({
@@ -302,9 +388,22 @@ Deno.serve(async (req) => {
         generation_count,
         population_size,
         mutation_rate,
-        status: best.hardViolations === 0 ? "draft" : "draft",
+        status: "draft",
+        current_version: newVersion,
       })
       .eq("id", schedule_id);
+
+    // Fix 4: Write back faculty workload
+    const workload = computeFacultyWorkload(best.chromosome, expandedSlots);
+    const workloadUpdates = Array.from(workload.entries()).map(([faculty_id, load]) =>
+      supabase.from("faculty").update({ current_load: load }).eq("id", faculty_id)
+    );
+    await Promise.all(workloadUpdates);
+
+    // Fix 12: Mark job completed
+    if (jobId) {
+      await supabase.from("generation_jobs").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", jobId);
+    }
 
     return new Response(
       JSON.stringify({
@@ -313,10 +412,15 @@ Deno.serve(async (req) => {
         hard_violations: best.hardViolations,
         soft_score: best.softScore,
         entries_count: entries.length,
+        version: newVersion,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
+    // Fix 12: Mark job failed on error
+    if (jobId) {
+      await supabase.from("generation_jobs").update({ status: "failed", error_message: error.message, completed_at: new Date().toISOString() }).eq("id", jobId);
+    }
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
