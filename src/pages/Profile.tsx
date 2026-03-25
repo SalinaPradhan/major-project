@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +12,18 @@ import { User, Mail, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Profile() {
-  const { user, role, profile } = useAuth();
-  const [displayName, setDisplayName] = useState(profile?.display_name ?? user?.email?.split('@')[0] ?? '');
+  const { user, role } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
-  const initials = (displayName || 'U').slice(0, 2).toUpperCase();
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle().then(({ data }) => {
+      setProfile(data);
+      setDisplayName(data?.display_name ?? user.email?.split('@')[0] ?? '');
+    });
+  }, [user]);
 
   const handleSave = async () => {
     if (!user) return;
