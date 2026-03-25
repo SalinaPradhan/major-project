@@ -325,6 +325,30 @@ Deno.serve(async (req) => {
     population.sort((a, b) => b.score - a.score);
     const best = population[0];
 
+    // Fix 11: Save version snapshot before overwriting
+    const { data: currentSchedule } = await supabase
+      .from("schedules")
+      .select("current_version")
+      .eq("id", schedule_id)
+      .single();
+
+    const newVersion = (currentSchedule?.current_version ?? 0) + 1;
+
+    // Snapshot old entries before deleting
+    const { data: oldEntries } = await supabase
+      .from("schedule_entries")
+      .select("*")
+      .eq("schedule_id", schedule_id);
+
+    if (oldEntries && oldEntries.length > 0) {
+      await supabase.from("schedule_versions").insert({
+        schedule_id,
+        version_number: currentSchedule?.current_version ?? 0,
+        fitness_score: null,
+        entries_snapshot: oldEntries,
+      });
+    }
+
     // Delete old entries for this schedule
     await supabase.from("schedule_entries").delete().eq("schedule_id", schedule_id);
 
@@ -342,7 +366,7 @@ Deno.serve(async (req) => {
       if (insertError) throw insertError;
     }
 
-    // Update schedule metadata
+    // Update schedule metadata with version
     await supabase
       .from("schedules")
       .update({
@@ -353,6 +377,7 @@ Deno.serve(async (req) => {
         population_size,
         mutation_rate,
         status: "draft",
+        current_version: newVersion,
       })
       .eq("id", schedule_id);
 
@@ -363,6 +388,11 @@ Deno.serve(async (req) => {
     );
     await Promise.all(workloadUpdates);
 
+    // Fix 12: Mark job completed
+    if (jobId) {
+      await supabase.from("generation_jobs").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", jobId);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -370,10 +400,18 @@ Deno.serve(async (req) => {
         hard_violations: best.hardViolations,
         soft_score: best.softScore,
         entries_count: entries.length,
+        version: newVersion,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
+    // Fix 12: Mark job failed on error
+    if (typeof jobId !== "undefined" && jobId) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, supabaseKey);
+      await sb.from("generation_jobs").update({ status: "failed", error_message: error.message, completed_at: new Date().toISOString() }).eq("id", jobId);
+    }
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
