@@ -265,6 +265,44 @@ export type Database = {
           },
         ]
       }
+      generation_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          schedule_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          schedule_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          schedule_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -414,9 +452,51 @@ export type Database = {
           },
         ]
       }
+      schedule_versions: {
+        Row: {
+          created_at: string
+          entries_snapshot: Json
+          fitness_score: number | null
+          hard_constraint_violations: number | null
+          id: string
+          schedule_id: string
+          soft_constraint_score: number | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          entries_snapshot?: Json
+          fitness_score?: number | null
+          hard_constraint_violations?: number | null
+          id?: string
+          schedule_id: string
+          soft_constraint_score?: number | null
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          entries_snapshot?: Json
+          fitness_score?: number | null
+          hard_constraint_violations?: number | null
+          id?: string
+          schedule_id?: string
+          soft_constraint_score?: number | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_versions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedules: {
         Row: {
           created_at: string
+          current_version: number | null
           fitness_score: number | null
           generation_count: number | null
           hard_constraint_violations: number | null
@@ -430,6 +510,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_version?: number | null
           fitness_score?: number | null
           generation_count?: number | null
           hard_constraint_violations?: number | null
@@ -443,6 +524,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_version?: number | null
           fitness_score?: number | null
           generation_count?: number | null
           hard_constraint_violations?: number | null
@@ -586,6 +668,7 @@ export type Database = {
         | "friday"
         | "saturday"
       event_type: "exam" | "seminar" | "workshop" | "meeting" | "other"
+      job_status: "pending" | "running" | "completed" | "failed"
       room_type: "classroom" | "lab" | "auditorium"
       schedule_status: "draft" | "published" | "archived"
     }
@@ -725,6 +808,7 @@ export const Constants = {
         "saturday",
       ],
       event_type: ["exam", "seminar", "workshop", "meeting", "other"],
+      job_status: ["pending", "running", "completed", "failed"],
       room_type: ["classroom", "lab", "auditorium"],
       schedule_status: ["draft", "published", "archived"],
     },
