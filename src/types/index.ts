@@ -26,7 +26,7 @@ export interface SupportStaff {
   id: string;
   name: string;
   email?: string;
-  role: 'lab-assistant' | 'technician' | 'admin';
+  role: 'lab_assistant' | 'technician' | 'admin';
   department: string;
   shift: 'morning' | 'afternoon' | 'full-day';
   status: 'available' | 'assigned' | 'on-leave';
