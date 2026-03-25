@@ -6,6 +6,7 @@ import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Plus, Play, Trash2, Pencil, Cpu, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
@@ -19,7 +20,7 @@ const statusColors: Record<string, string> = {
 export default function Scheduler() {
   const { data: schedules = [], isLoading } = useSchedules();
   const deleteSchedule = useDeleteSchedule();
-  const generateTimetable = useGenerateTimetable();
+  const { mutateAsync: generate, isPending, progress } = useGenerateTimetable();
   const [formOpen, setFormOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Tables<'schedules'> | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export default function Scheduler() {
   const handleGenerate = async (schedule: Tables<'schedules'>) => {
     try {
       toast.info('Generating timetable... This may take a moment.');
-      await generateTimetable.mutateAsync({
+      await generate({
         scheduleId: schedule.id,
         populationSize: schedule.population_size ?? 50,
         generationCount: schedule.generation_count ?? 200,
@@ -45,6 +46,12 @@ export default function Scheduler() {
     setDeleteId(null);
   };
 
+  const progressPercent = progress
+    ? progress.totalGenerations > 0
+      ? Math.round((progress.currentGeneration / progress.totalGenerations) * 100)
+      : 0
+    : null;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -57,6 +64,27 @@ export default function Scheduler() {
           <Plus className="mr-2 h-4 w-4" />New Schedule
         </Button>
       </div>
+
+      {/* Fix 19: Real-time generation progress */}
+      {progress && isPending && (
+        <Card className="glass-card border-primary/30">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Generating timetable...</span>
+                <span className="text-foreground font-medium">{progressPercent}%</span>
+              </div>
+              <Progress value={progressPercent ?? 0} className="h-2" />
+              <div className="flex gap-4 text-xs text-muted-foreground">
+                <span>Gen: {progress.currentGeneration}/{progress.totalGenerations}</span>
+                {progress.currentFitness != null && <span>Fitness: {progress.currentFitness.toFixed(1)}</span>}
+                {progress.currentViolations != null && <span>Violations: {progress.currentViolations}</span>}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {isLoading ? (
         <p className="text-muted-foreground">Loading schedules...</p>
       ) : schedules.length === 0 ? (
@@ -84,7 +112,7 @@ export default function Scheduler() {
                   <div>Pop: {s.population_size ?? '—'} · Gen: {s.generation_count ?? '—'} · Mut: {s.mutation_rate ?? '—'}</div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleGenerate(s)} disabled={generateTimetable.isPending}>
+                  <Button size="sm" variant="outline" onClick={() => handleGenerate(s)} disabled={isPending}>
                     <Play className="mr-1 h-3 w-3" />Generate
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => { setEditingSchedule(s); setFormOpen(true); }}><Pencil className="h-3 w-3" /></Button>
