@@ -66,7 +66,7 @@ export function AppSidebar() {
       return [
         ...baseItems,
         { name: 'My Schedule', href: '/student-dashboard', icon: GraduationCap },
-        { name: 'Events', href: '/event-scheduler', icon: CalendarDays },
+        { name: 'Venue Mgmt', href: '/venue-management', icon: CalendarDays },
       ];
     }
 
