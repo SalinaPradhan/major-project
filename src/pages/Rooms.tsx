@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 export default function Rooms() {
+  const navigate = useNavigate();
   const { isAdminOrAbove } = useAuth();
   const { data: rooms = [], isLoading } = useRooms();
   const deleteRoom = useDeleteRoom();
