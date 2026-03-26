@@ -19,4 +19,4 @@ export const usePremierVenues = () => {
   });
 };
 
-export const isPremierVenueType = (type: string) => PREMIER_TYPES.includes(type);
+export const isPremierVenueType = (type: string) => (PREMIER_TYPES as readonly string[]).includes(type);
