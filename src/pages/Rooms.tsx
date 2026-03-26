@@ -47,7 +47,10 @@ export default function Rooms() {
   const typeColors: Record<string, string> = {
     classroom: 'bg-primary/20 text-primary',
     lab: 'bg-amber-500/20 text-amber-400',
-    auditorium: 'bg-emerald-500/20 text-emerald-400',
+    auditorium: 'bg-destructive/20 text-destructive',
+    conference_hall: 'bg-emerald-500/20 text-emerald-400',
+    indoor_stadium: 'bg-orange-500/20 text-orange-400',
+    cineplex: 'bg-sky-500/20 text-sky-400',
   };
 
   return (
