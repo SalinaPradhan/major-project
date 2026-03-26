@@ -1,16 +1,20 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useSystemAlerts } from '@/hooks/useSystemAlerts';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import { ResourceUtilization } from '@/components/dashboard/ResourceUtilization';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { TodaySchedulePreview } from '@/components/dashboard/TodaySchedulePreview';
 import { SwapRequestsPanel } from '@/components/dashboard/SwapRequestsPanel';
-import { Building2, Users, BookOpen, DoorOpen, GraduationCap, Calendar } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Building2, Users, BookOpen, DoorOpen, GraduationCap, Calendar, Bell } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function Index() {
   const { user, role, isAdminOrAbove, isFaculty } = useAuth();
   const { data: stats, isLoading } = useDashboardStats();
+  const { data: alerts = [] } = useSystemAlerts(5);
 
   const displayName = user?.user_metadata?.display_name ?? user?.email?.split('@')[0] ?? 'User';
 
@@ -22,6 +26,36 @@ export default function Index() {
     { label: 'Batches', value: stats?.batches ?? 0, icon: GraduationCap, variant: 'default' as const, link: '/batches' },
     { label: 'Schedules', value: stats?.schedules ?? 0, icon: Calendar, variant: 'primary' as const, link: '/scheduler' },
   ];
+
+  const RecentAlertsCard = () => (
+    <Card className="glass-card border-border">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4" />Recent Venue Alerts
+          </CardTitle>
+          <Badge variant="secondary">{alerts.length}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {alerts.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">No recent alerts</p>
+        ) : (
+          <div className="space-y-2">
+            {alerts.map((a) => (
+              <div key={a.id} className="rounded border border-border p-2 space-y-0.5">
+                <p className="text-xs font-medium">{a.title}</p>
+                <p className="text-[10px] text-muted-foreground">{a.message}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -59,7 +93,7 @@ export default function Index() {
             </div>
             <div className="space-y-6">
               <QuickActions />
-              <AlertsPanel />
+              <RecentAlertsCard />
               <SwapRequestsPanel />
             </div>
           </div>
@@ -69,13 +103,14 @@ export default function Index() {
       {isFaculty && (
         <div className="grid gap-6 lg:grid-cols-2">
           <TodaySchedulePreview />
-          <AlertsPanel />
+          <RecentAlertsCard />
         </div>
       )}
 
       {role === 'student' && (
         <div className="grid gap-6 lg:grid-cols-2">
           <TodaySchedulePreview />
+          <RecentAlertsCard />
         </div>
       )}
     </div>
