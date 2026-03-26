@@ -110,6 +110,12 @@ export default function Rooms() {
                   {isAdminOrAbove && (
                     <TableCell>
                       <div className="flex gap-1">
+                        {isPremierVenueType(r.room_type) && (
+                          <Button variant="ghost" size="icon" title="Book Venue"
+                            onClick={() => navigate(`/venue-management?venue=${r.id}`)}>
+                            <CalendarDays className="h-4 w-4 text-primary" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(r)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
