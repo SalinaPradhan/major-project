@@ -100,7 +100,7 @@ export default function Rooms() {
                   <TableCell className="font-medium">{r.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={typeColors[r.room_type] || ''}>
-                      {r.room_type}
+                      {r.room_type.replace('_', ' ')}
                     </Badge>
                   </TableCell>
                   <TableCell>{r.capacity}</TableCell>
