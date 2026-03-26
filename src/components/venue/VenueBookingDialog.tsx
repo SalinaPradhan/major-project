@@ -69,7 +69,12 @@ export function VenueBookingDialog({ open, onOpenChange, defaultDate, defaultVen
 
     try {
       await createBooking.mutateAsync({
-        ...values,
+        venue_id: values.venue_id,
+        event_name: values.event_name,
+        description: values.description,
+        event_date: values.event_date,
+        start_time: values.start_time,
+        end_time: values.end_time,
         host_id: user.id,
         host_name: displayName,
       });

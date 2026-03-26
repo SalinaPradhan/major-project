@@ -12,7 +12,7 @@ import { VenueRequestsPanel } from '@/components/venue/VenueRequestsPanel';
 import { useVenueBookings, type VenueBooking } from '@/hooks/useVenueBookings';
 import { useCancelVenueBooking } from '@/hooks/useVenueBookings';
 import { useAuth } from '@/contexts/AuthContext';
-import { VENUE_BG_COLORS, VENUE_LABELS, type PremierVenueType } from '@/types/venue';
+import { VENUE_BG_COLORS, type PremierVenueType } from '@/types/venue';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
