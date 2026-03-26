@@ -721,7 +721,13 @@ export type Database = {
         | "saturday"
       event_type: "exam" | "seminar" | "workshop" | "meeting" | "other"
       job_status: "pending" | "running" | "completed" | "failed"
-      room_type: "classroom" | "lab" | "auditorium"
+      room_type:
+        | "classroom"
+        | "lab"
+        | "auditorium"
+        | "conference_hall"
+        | "indoor_stadium"
+        | "cineplex"
       schedule_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
@@ -862,7 +868,14 @@ export const Constants = {
       ],
       event_type: ["exam", "seminar", "workshop", "meeting", "other"],
       job_status: ["pending", "running", "completed", "failed"],
-      room_type: ["classroom", "lab", "auditorium"],
+      room_type: [
+        "classroom",
+        "lab",
+        "auditorium",
+        "conference_hall",
+        "indoor_stadium",
+        "cineplex",
+      ],
       schedule_status: ["draft", "published", "archived"],
     },
   },
