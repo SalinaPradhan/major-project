@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
-const PREMIER_TYPES = ['auditorium', 'conference_hall', 'indoor_stadium', 'cineplex'];
+const PREMIER_TYPES = ['auditorium', 'conference_hall', 'indoor_stadium', 'cineplex'] as const;
 
 export const usePremierVenues = () => {
   return useQuery({

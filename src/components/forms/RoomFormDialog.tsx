@@ -14,7 +14,7 @@ import type { Tables } from '@/integrations/supabase/types';
 
 const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
-  room_type: z.enum(['classroom', 'lab', 'auditorium']),
+  room_type: z.enum(['classroom', 'lab', 'auditorium', 'conference_hall', 'indoor_stadium', 'cineplex']),
   capacity: z.coerce.number().min(1, 'Capacity must be at least 1'),
   building: z.string().optional(),
   floor: z.coerce.number().optional(),
