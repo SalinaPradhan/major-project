@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRooms, useDeleteRoom } from '@/hooks/useRooms';
 import { useAuth } from '@/contexts/AuthContext';
+import { isPremierVenueType } from '@/hooks/usePremierVenues';
 import { RoomFormDialog } from '@/components/forms/RoomFormDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Search, DoorOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, DoorOpen, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
