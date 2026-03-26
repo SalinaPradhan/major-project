@@ -91,7 +91,7 @@ export default function Rooms() {
                 <TableHead>Building</TableHead>
                 <TableHead>Floor</TableHead>
                 <TableHead>Projector</TableHead>
-                {isAdminOrAbove && <TableHead className="w-24">Actions</TableHead>}
+                {isAdminOrAbove && <TableHead className="w-32">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
