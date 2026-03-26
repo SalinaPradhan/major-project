@@ -589,6 +589,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          message: string
+          related_entity_id: string | null
+          title: string
+        }
+        Insert: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          message: string
+          related_entity_id?: string | null
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          message?: string
+          related_entity_id?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       teaching_assignments: {
         Row: {
           batch_id: string
@@ -686,6 +713,97 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_bookings: {
+        Row: {
+          created_at: string
+          description: string
+          end_time: string
+          event_date: string
+          event_name: string
+          host_id: string
+          host_name: string
+          id: string
+          start_time: string
+          status: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          end_time: string
+          event_date: string
+          event_name: string
+          host_id: string
+          host_name: string
+          id?: string
+          start_time: string
+          status?: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          end_time?: string
+          event_date?: string
+          event_name?: string
+          host_id?: string
+          host_name?: string
+          id?: string
+          start_time?: string
+          status?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_bookings_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_requests: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          reason: string
+          requestor_id: string
+          requestor_name: string
+          reviewed_at: string | null
+          status: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          reason?: string
+          requestor_id: string
+          requestor_name: string
+          reviewed_at?: string | null
+          status?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          requestor_id?: string
+          requestor_name?: string
+          reviewed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "venue_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -708,6 +826,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_booking_host: {
+        Args: { _booking_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "viewer" | "faculty" | "student"
@@ -721,7 +843,13 @@ export type Database = {
         | "saturday"
       event_type: "exam" | "seminar" | "workshop" | "meeting" | "other"
       job_status: "pending" | "running" | "completed" | "failed"
-      room_type: "classroom" | "lab" | "auditorium"
+      room_type:
+        | "classroom"
+        | "lab"
+        | "auditorium"
+        | "conference_hall"
+        | "indoor_stadium"
+        | "cineplex"
       schedule_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
@@ -862,7 +990,14 @@ export const Constants = {
       ],
       event_type: ["exam", "seminar", "workshop", "meeting", "other"],
       job_status: ["pending", "running", "completed", "failed"],
-      room_type: ["classroom", "lab", "auditorium"],
+      room_type: [
+        "classroom",
+        "lab",
+        "auditorium",
+        "conference_hall",
+        "indoor_stadium",
+        "cineplex",
+      ],
       schedule_status: ["draft", "published", "archived"],
     },
   },

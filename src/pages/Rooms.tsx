@@ -1,17 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRooms, useDeleteRoom } from '@/hooks/useRooms';
 import { useAuth } from '@/contexts/AuthContext';
+import { isPremierVenueType } from '@/hooks/usePremierVenues';
 import { RoomFormDialog } from '@/components/forms/RoomFormDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Search, DoorOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, DoorOpen, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 export default function Rooms() {
+  const navigate = useNavigate();
   const { isAdminOrAbove } = useAuth();
   const { data: rooms = [], isLoading } = useRooms();
   const deleteRoom = useDeleteRoom();
@@ -44,7 +47,10 @@ export default function Rooms() {
   const typeColors: Record<string, string> = {
     classroom: 'bg-primary/20 text-primary',
     lab: 'bg-amber-500/20 text-amber-400',
-    auditorium: 'bg-emerald-500/20 text-emerald-400',
+    auditorium: 'bg-destructive/20 text-destructive',
+    conference_hall: 'bg-emerald-500/20 text-emerald-400',
+    indoor_stadium: 'bg-orange-500/20 text-orange-400',
+    cineplex: 'bg-sky-500/20 text-sky-400',
   };
 
   return (
@@ -85,7 +91,7 @@ export default function Rooms() {
                 <TableHead>Building</TableHead>
                 <TableHead>Floor</TableHead>
                 <TableHead>Projector</TableHead>
-                {isAdminOrAbove && <TableHead className="w-24">Actions</TableHead>}
+                {isAdminOrAbove && <TableHead className="w-32">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -94,7 +100,7 @@ export default function Rooms() {
                   <TableCell className="font-medium">{r.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={typeColors[r.room_type] || ''}>
-                      {r.room_type}
+                      {r.room_type.replace('_', ' ')}
                     </Badge>
                   </TableCell>
                   <TableCell>{r.capacity}</TableCell>
@@ -104,6 +110,12 @@ export default function Rooms() {
                   {isAdminOrAbove && (
                     <TableCell>
                       <div className="flex gap-1">
+                        {isPremierVenueType(r.room_type) && (
+                          <Button variant="ghost" size="icon" title="Book Venue"
+                            onClick={() => navigate(`/venue-management?venue=${r.id}`)}>
+                            <CalendarDays className="h-4 w-4 text-primary" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(r)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
