@@ -131,6 +131,9 @@ export function RoomFormDialog({ open, onOpenChange, room }: RoomFormDialogProps
                         <SelectItem value="classroom">Classroom</SelectItem>
                         <SelectItem value="lab">Lab</SelectItem>
                         <SelectItem value="auditorium">Auditorium</SelectItem>
+                        <SelectItem value="conference_hall">Conference Hall</SelectItem>
+                        <SelectItem value="indoor_stadium">Indoor Stadium</SelectItem>
+                        <SelectItem value="cineplex">Cineplex</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
