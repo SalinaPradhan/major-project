@@ -46,7 +46,7 @@ export function AppSidebar() {
       items.push(
         { name: 'Support Staff', href: '/staff', icon: UserCog },
         { name: 'Assets', href: '/assets', icon: Package },
-        { name: 'Events', href: '/event-scheduler', icon: CalendarDays },
+        { name: 'Venue Mgmt', href: '/venue-management', icon: CalendarDays },
       );
 
       return items;
