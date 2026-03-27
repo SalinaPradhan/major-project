@@ -1,68 +1,200 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { TodaySchedulePreview } from '@/components/dashboard/TodaySchedulePreview';
-import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
-import { SwapRequestsPanel } from '@/components/dashboard/SwapRequestsPanel';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFacultyByEmail } from '@/hooks/useFaculty';
+import { useSchedules, useScheduleEntries } from '@/hooks/useSchedules';
+import { useSwapRequests } from '@/hooks/useSwapRequests';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { FacultyMetrics } from '@/components/dashboard/FacultyMetrics';
+import { ScheduleTimeline, type TimelineEntry } from '@/components/dashboard/ScheduleTimeline';
+import { WorkloadCard } from '@/components/dashboard/WorkloadCard';
+import { FacultySwapPanel } from '@/components/dashboard/FacultySwapPanel';
+import { WeeklyGrid, type GridCell } from '@/components/dashboard/WeeklyGrid';
+import { AvailabilityGrid } from '@/components/dashboard/AvailabilityGrid';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, BookOpen, CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
+import { format } from 'date-fns';
+import { useMemo } from 'react';
+
+const DAY_MAP: Record<string, string> = {
+  0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
+  4: 'thursday', 5: 'friday', 6: 'saturday',
+};
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 export default function FacultyDashboard() {
   const { user } = useAuth();
-  const displayName = user?.user_metadata?.display_name ?? user?.email?.split('@')[0] ?? 'Faculty';
+  const email = user?.email;
+  const displayName = user?.user_metadata?.display_name ?? email?.split('@')[0] ?? 'Faculty';
+  const initials = displayName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+  const todayStr = format(new Date(), 'EEE, dd MMM yyyy');
+  const todayDay = DAY_MAP[new Date().getDay()];
+
+  const { data: facultyRecord, isLoading: facultyLoading } = useFacultyByEmail(email);
+  const facultyId = facultyRecord?.id ?? null;
+  const deptName = (facultyRecord as any)?.departments?.name ?? '';
+
+  // Published schedule
+  const { data: schedules = [] } = useSchedules();
+  const published = schedules.find((s) => s.status === 'published');
+  const { data: entries = [], isLoading: entriesLoading } = useScheduleEntries(published?.id ?? null);
+
+  // Time slots
+  const { data: timeSlots = [] } = useQuery({
+    queryKey: ['time_slots'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('time_slots').select('*').order('slot_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Teaching assignments for this faculty
+  const { data: assignments = [] } = useQuery({
+    queryKey: ['teaching_assignments', facultyId],
+    enabled: !!facultyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('teaching_assignments')
+        .select('*, course:courses(*), batch:batches(*)')
+        .eq('faculty_id', facultyId!);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: swaps = [] } = useSwapRequests();
+
+  // Filter entries for this faculty
+  const facultyEntries = useMemo(() => {
+    if (!facultyId) return [];
+    return entries.filter((e: any) => e.teaching_assignment?.faculty_id === facultyId);
+  }, [entries, facultyId]);
+
+  // Today's schedule timeline
+  const todayEntries = useMemo((): TimelineEntry[] => {
+    return facultyEntries
+      .filter((e: any) => e.day === todayDay)
+      .sort((a: any, b: any) => (a.time_slot?.slot_order ?? 0) - (b.time_slot?.slot_order ?? 0))
+      .map((e: any) => ({
+        id: e.id,
+        startTime: e.time_slot?.start_time?.slice(0, 5) ?? '',
+        endTime: e.time_slot?.end_time?.slice(0, 5) ?? '',
+        courseName: e.teaching_assignment?.course?.name ?? 'Unknown',
+        batchName: `${e.teaching_assignment?.batch?.name ?? ''}-${e.teaching_assignment?.batch?.section ?? ''}`,
+        roomName: e.room?.name ?? '',
+        roomCapacity: e.room?.capacity,
+        isLab: e.teaching_assignment?.is_lab ?? false,
+      }));
+  }, [facultyEntries, todayDay]);
+
+  // Metrics
+  const todayClasses = todayEntries.length;
+  const nextClassTime = useMemo(() => {
+    const now = new Date();
+    for (const e of todayEntries) {
+      const [h, m] = e.startTime.split(':').map(Number);
+      const d = new Date();
+      d.setHours(h, m, 0, 0);
+      if (d > now) return e.startTime;
+    }
+    return null;
+  }, [todayEntries]);
+
+  const weeklyLoad = facultyRecord?.current_load ?? facultyEntries.length;
+  const maxWeekly = facultyRecord?.max_hours_per_week ?? 18;
+  const semesterCourses = assignments.length;
+  const lectureAssignments = assignments.filter((a: any) => !a.is_lab).length;
+  const labAssignments = assignments.filter((a: any) => a.is_lab).length;
+  const pendingSwaps = swaps.filter((s) => s.status === 'pending').length;
+
+  // Workload breakdown (hours from schedule entries)
+  const lectureHours = facultyEntries.filter((e: any) => !e.teaching_assignment?.is_lab).length;
+  const labHours = facultyEntries.filter((e: any) => e.teaching_assignment?.is_lab).length;
+
+  // Weekly grid
+  const weeklyGrid = useMemo(() => {
+    const grid: Record<string, GridCell> = {};
+    facultyEntries.forEach((e: any) => {
+      const slotOrder = e.time_slot?.slot_order;
+      if (slotOrder != null && e.day) {
+        grid[`${e.day}-${slotOrder}`] = {
+          courseName: e.teaching_assignment?.course?.name ?? '?',
+          isLab: e.teaching_assignment?.is_lab ?? false,
+        };
+      }
+    });
+    return grid;
+  }, [facultyEntries]);
+
+  const gridSlots = timeSlots.map((s) => ({
+    id: s.id,
+    label: s.label,
+    slotOrder: s.slot_order,
+    isBreak: s.is_break,
+  }));
+
+  const loading = facultyLoading || entriesLoading;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Faculty Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Welcome back, {displayName}</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">My Schedule</CardTitle>
-            <Calendar className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/timetable"><Button variant="outline" className="w-full">View Full Timetable</Button></Link>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Availability</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/faculty"><Button variant="outline" className="w-full">Manage Preferences</Button></Link>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">My Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/courses"><Button variant="outline" className="w-full">View Courses</Button></Link>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Events</CardTitle>
-            <CalendarDays className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/event-scheduler"><Button variant="outline" className="w-full">View Events</Button></Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TodaySchedulePreview />
-        <div className="space-y-6">
-          <AlertsPanel />
-          <SwapRequestsPanel />
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-lg">
+            {initials}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Good morning, {displayName}</h1>
+            <p className="text-sm text-muted-foreground">
+              {deptName && `${deptName} · `}{todayStr}
+            </p>
+          </div>
         </div>
+        <Link to="/timetable">
+          <Button variant="outline" size="sm" className="gap-1">
+            My timetable <ExternalLink className="h-3 w-3" />
+          </Button>
+        </Link>
+      </div>
+
+      {/* Metrics */}
+      <FacultyMetrics
+        todayClasses={todayClasses}
+        nextClassTime={nextClassTime}
+        weeklyLoad={weeklyLoad}
+        maxWeeklyHours={maxWeekly}
+        semesterCourses={semesterCourses}
+        lectureCount={lectureAssignments}
+        labCount={labAssignments}
+        tutorialCount={0}
+        pendingSwaps={pendingSwaps}
+      />
+
+      {/* Middle row: Timeline + Workload/Swaps */}
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <ScheduleTimeline entries={todayEntries} loading={loading} />
+        <div className="space-y-6">
+          <WorkloadCard
+            currentHours={weeklyLoad}
+            maxHours={maxWeekly}
+            lectureHours={lectureHours}
+            labHours={labHours}
+            tutorialHours={0}
+          />
+          <FacultySwapPanel />
+        </div>
+      </div>
+
+      {/* Bottom row: Weekly Grid + Availability */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <WeeklyGrid
+          grid={weeklyGrid}
+          timeSlots={gridSlots}
+          days={DAYS}
+          loading={loading}
+        />
+        <AvailabilityGrid facultyId={facultyId} />
       </div>
     </div>
   );
