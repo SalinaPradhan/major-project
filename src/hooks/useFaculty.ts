@@ -50,3 +50,19 @@ export const useDeleteFaculty = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['faculty'] }),
   });
 };
+
+export const useFacultyByEmail = (email: string | undefined) => {
+  return useQuery({
+    queryKey: ['faculty_by_email', email],
+    enabled: !!email,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('faculty')
+        .select('*, departments(name)')
+        .eq('email', email!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+};
