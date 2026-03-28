@@ -1,116 +1,63 @@
 
 
-# Revised Plan: Faculty & Student Dashboards — Matching Reference Exactly
+# Plan: Redesign Faculty & Student Dashboards to Match New Reference
 
-## Mismatches Found in Previous Plan
+## Key Differences from Current Implementation
 
-1. **Student dashboard reference has NO swap requests, NO availability grid, NO workload card** — previous plan was correct on this, but missed key student-specific sections: **Announcements panel** and **"Next class in X min" countdown**.
+### Faculty Dashboard
+1. **Metrics row**: Current uses icon+card layout with colored backgrounds. Reference uses plain `metric` boxes with `bg-secondary`, no icons, larger 22px values, and percentage text like "83% · On track" in green.
+2. **Timeline**: Current is compact horizontal rows. Reference uses a more spacious layout with `timeline-row` borders, colored dots (blue=#185FA5, green=#3B6D11, amber=#854F0B), room capacity shown in subtitle, and "Next class" highlighted with a blue left border + label.
+3. **Workload card**: Current uses shadcn Progress component. Reference uses a custom `load-bar-bg`/`load-bar-fill` with labels "0 hrs / Safe zone / 18 hrs max" below, and an "On track" badge next to the value.
+4. **Swap panel**: Current is minimal. Reference shows styled swap rows with "Mon 9:00 AM → Wed 2:00 PM" titles, status badges (Pending amber, Approved green), Cancel/Details buttons, and a full-width "+ New swap request" button at bottom.
+5. **Weekly grid**: Current uses `<table>`. Reference uses CSS grid (`grid-template-columns: 60px repeat(6,1fr)`) with 32px-height cells, color-coded borders (Lecture=#85B7EB, Lab=#97C459, Tutorial=#EF9F27), and "This week / Next week" tab toggle.
+6. **Availability grid**: Current uses table. Reference uses CSS grid with 22px cells, three states visually distinct (available=secondary, preferred=green bg+border, unavailable=red bg+border), legend bar at top, summary text at bottom.
 
-2. **Student reference shows detailed today's classes table** with columns: Time, Subject, Duration ("48 min" countdown), Location (Room + Floor + Block), Instructor — NOT a simple timeline with dots. Previous plan described a faculty-style timeline for students too.
-
-3. **Student reference has an Announcements section** (mid-sem exams, room changes, holidays with urgency badges) — previous plan omitted this entirely.
-
-4. **Student header shows batch info** ("BCA Sem 3 · Section A") + "Full timetable ↗" and "Export PDF ↗" action buttons — previous plan only mentioned 3 metric cards.
-
-5. **Faculty reference "Today's Schedule" is a vertical timeline** with colored left-border dots — this was correct. But the **weekly schedule grid** in the reference shows actual course cells (not just color blocks), and **Availability Preferences** is a separate grid with click-to-cycle behavior — previous plan lumped these together.
-
-6. **Faculty header** includes initials avatar circle + department name + date — correct in previous plan.
-
-7. **Student weekly timetable** shows a full 7-slot × 6-day grid with course-type labels in cells + summary footer ("This week: 16 hrs · 2 lectures · 1 lab · 1 tutorial") — previous plan didn't capture the footer summary.
-
----
-
-## Corrected Component Map
-
-### Faculty Dashboard (exact match to reference)
-
-```text
-┌─ [RM] Good morning, Dr. Rahul Mehta ──── Computer Science · Thu, 26 Mar 2026 ─┐
-├─ 4 Stat Cards: Today's classes (4, next at 11:00) │ Weekly load (15/18, 83%)   │
-│                Semester courses (3, breakdown)     │ Swap requests (2, pending) │
-├───────────────────────────────────────┬─────────────────────────────────────────┤
-│ Today's Schedule (timeline)           │ Workload this semester                  │
-│ • 09:00-10:00 DSA · BCA-A · LH-3     │ 15/18 hrs · Progress bar                │
-│ • 10:00-11:00 DSA · BCA-B · LH-3     │ Lectures 9h · Labs 4h · Tutorials 2h   │
-│ • 11:00-12:00 Free period             ├─────────────────────────────────────────┤
-│ • 11:00-13:00 DSA Lab · BCA-A · Lab-2 │ Swap Requests                           │
-│ • 14:00-15:00 Tutorial DBMS · BCA-C   │ Mon 9AM→Wed 2PM · Pending               │
-│                                       │ Fri 2PM→Fri 4PM · Approved              │
-├───────────────────────────────────────┼─────────────────────────────────────────┤
-│ Weekly Schedule (grid, This/Next wk)  │ Availability Preferences (click grid)   │
-│ Mon-Sat × time slots with course cells│ Preferred / Available / Unavailable     │
-└───────────────────────────────────────┴─────────────────────────────────────────┘
-```
-
-### Student Dashboard (exact match to reference)
-
-```text
-┌─ [PS] Good morning, Priya Sharma ─── BCA Sem 3 · Section A · Thu, 26 Mar ────┐
-│                                        [Full timetable ↗] [Export PDF ↗]      │
-├─ Today's Classes (table, NOT timeline) ───────────────────────────────────────┤
-│ Time  │ Subject                │ Duration │ Location              │ Instructor│
-│ 09:00 │ DSA                    │ 48 min   │ Lab-2 · Floor 1       │ Dr. Mehta │
-│ 10:00 │ DBMS                   │          │ LH-3 · Floor 2        │ Dr. Mehta │
-│ ...   │                        │          │                       │           │
-│                                        "Next class in 48 min"                 │
-│                                        "This week: 16 hrs"                    │
-├─ Announcements ───────────────────────┬─ Weekly Timetable ────────────────────┤
-│ • Mid-sem exam schedule released      │ Mon-Sat × 7 time slots grid           │
-│   Urgent · Today                      │ Color-coded: Lecture/Lab/Tutorial     │
-│ • DBMS lecture shifted to LH-4        │                                       │
-│   Room change · Yesterday             │                                       │
-│ • Holiday: Holi                       │                                       │
-│   Holiday · 2 days ago                │                                       │
-└───────────────────────────────────────┴───────────────────────────────────────┘
-```
-
----
-
-## Files to Create
-
-### `src/components/dashboard/FacultyMetrics.tsx`
-4 stat cards matching reference exactly. Data from: schedule_entries (today's count), faculty.current_load + max_hours_per_week, teaching_assignments (course count + type breakdown), swap requests (pending count). Each card shows a primary number + subtitle detail.
-
-### `src/components/dashboard/ScheduleTimeline.tsx`
-Faculty-only vertical timeline. Fetches published schedule entries filtered by faculty email → faculty_id and today's day_of_week. Each row: time range, colored dot (blue=Lecture, green=Lab, amber=Tutorial), course name, batch + section + room (with capacity), type badge. Free periods shown. Highlights "next class" with blue left border.
-
-### `src/components/dashboard/StudentScheduleTable.tsx`
-Student-specific table (NOT the faculty timeline). Columns: Time, Subject, Duration (countdown to next), Location (Room + Floor + Block), Instructor. Footer: "Next class in X min" + "This week: X hrs · breakdown". Data from schedule_entries filtered by student's batch_id from profiles table.
-
-### `src/components/dashboard/AnnouncementsPanel.tsx`
-Student-only. Fetches system_alerts and displays as a list with urgency badges (Urgent=red, Room change=amber, Holiday=blue) and relative timestamps ("Today", "Yesterday", "2 days ago").
-
-### `src/components/dashboard/WorkloadCard.tsx`
-Faculty-only. Shows X/Y hrs with progress bar + breakdown by session type (Lectures, Labs, Tutorials). Data from teaching_assignments + schedule_entries for current faculty.
-
-### `src/components/dashboard/WeeklyGrid.tsx`
-Shared component (used by both dashboards). Displays a time × day grid with course cells. Faculty mode: filtered by faculty_id. Student mode: filtered by batch_id. Color-coded cells. Optional "This week/Next week" toggle for faculty. Summary footer for student ("This week: 16 hrs").
-
-### `src/components/dashboard/AvailabilityGrid.tsx`
-Faculty-only. Interactive grid using existing `useFacultyAvailability` + `useSetFacultyPreference`. Click to cycle: Available → Preferred (green) → Unavailable (red). Legend at top.
-
-### `src/components/dashboard/FacultySwapPanel.tsx`
-Faculty-only. Uses `useSwapRequests` hook. Shows from→to slots, course + batch + reason, status badges (Pending=amber, Approved=green). Cancel/Details buttons for pending.
+### Student Dashboard
+1. **Metrics row**: Current has none. Reference has 4 metric boxes: Today's classes (count + breakdown), Next class in (countdown), This week (hours), Announcements (count).
+2. **Today's classes**: Current uses a `<Table>`. Reference uses card-based `class-card` items with dot+time+body layout, "Next" badge on the upcoming class with blue highlight, tags showing type + seat count.
+3. **Next class widget**: New component — circular SVG countdown ring (80x80) showing minutes left, course name, room + floor, instructor, "Get directions" button.
+4. **Announcements**: Current is in bottom section. Reference puts it in the right column alongside the countdown widget, with colored dots (red=urgent, blue=info, green=holiday) and urgency badges.
+5. **Weekly grid**: Current in bottom 2-col. Reference is a full-width card at bottom with legend + tab toggle, today's column highlighted with `wg-today` outline.
 
 ## Files to Modify
 
-### `src/pages/FacultyDashboard.tsx`
-Complete rewrite with: header (initials avatar + greeting + dept + date), FacultyMetrics, 2-col layout (ScheduleTimeline | WorkloadCard + FacultySwapPanel), 2-col bottom (WeeklyGrid | AvailabilityGrid).
+### `src/components/dashboard/FacultyMetrics.tsx`
+Remove icons. Use plain divs with `bg-secondary` background, `text-[22px] font-medium` values. "Weekly load" shows `15 / 18 hrs` with green sub text. "Swap requests" value in amber when pending. No card borders — just rounded metric boxes in a flex row.
+
+### `src/components/dashboard/ScheduleTimeline.tsx`
+Restyle to match reference `timeline-row` pattern: flex rows with bottom border, `time-col` (72px, 12px font), colored dots (10px, specific hex colors), course name + subtitle (batch · room · capacity), type badge (Lecture/Lab/Tutorial with reference colors #E6F1FB/#0C447C etc). "Next class" row gets blue left border + "Next class" sub-label. Free periods at 50% opacity with gray dot.
+
+### `src/components/dashboard/WorkloadCard.tsx`
+Replace Progress component with custom bar (`h-2 rounded bg-secondary` with green fill div). Add "On track" badge. Add "0 hrs / Safe zone / 18 hrs max" labels below bar. Breakdown uses flex justify-between rows.
+
+### `src/components/dashboard/FacultySwapPanel.tsx`
+Restyle swap rows: title "Mon 9:00 AM → Wed 2:00 PM" with status badge on right. Detail line for course + reason. Cancel + Details buttons (`btn-sm` style). Full-width "+ New swap request" button at bottom.
+
+### `src/components/dashboard/WeeklyGrid.tsx`
+Switch from `<table>` to CSS grid layout. Add "This week / Next week" tab toggle (pill tabs). Cells 32px height (faculty) / 30px (student), with type-specific backgrounds AND border colors. Support `todayColumn` prop for student view highlighting. Add legend for student mode. Accept `summaryText` for footer.
+
+### `src/components/dashboard/AvailabilityGrid.tsx`
+Switch from `<table>` to CSS grid (56px + repeat(6,1fr)). Cells 22px height. Remove text labels from cells — just colored backgrounds. Legend as inline spans with colored squares. "Save ↗" button in header.
+
+### `src/components/dashboard/StudentScheduleTable.tsx`
+Complete redesign from table to card-based layout. Each class is a `class-card` div (border, rounded, flex with gap). Time column shows start/end times stacked. Colored dot (blue=lecture, green=lab, amber=tutorial). Body has title, subtitle (instructor · room + floor + block), tags row with type badge. "Next" class gets blue border + "Next" pill badge. Remove the table entirely.
 
 ### `src/pages/StudentDashboard.tsx`
-Complete rewrite with: header (initials avatar + greeting + batch + section + date + action buttons), StudentScheduleTable, 2-col layout (AnnouncementsPanel | WeeklyGrid).
+Add 4 metric boxes row (Today's classes, Next class countdown, This week hours, Announcements count). Middle section: 2-col grid (1.5fr left: Today's classes cards, 1fr right: Countdown ring widget + Announcements). Bottom: full-width Weekly timetable card with legend + tab toggle. Add countdown ring SVG component inline.
 
-### `src/hooks/useFaculty.ts`
-Add `useFacultyByEmail(email)` to look up the faculty record linked to the current auth user's email — needed to filter schedule entries by faculty_id.
+### `src/pages/FacultyDashboard.tsx`
+Update header text size (16px not 2xl). Metric boxes use flex row not grid. Grid gaps reduced to 14px (gap-3.5). No layout structure changes needed — just ensure components render with updated styling.
 
----
+### `src/components/dashboard/AnnouncementsPanel.tsx`
+Restyle to match reference: colored dots (red=#E24B4A, blue=#185FA5, green=#3B6D11) instead of generic primary dot. Notice rows with bottom border. Urgency badges use reference colors (Urgent=red bg #FCEBEB, Room change=blue #E6F1FB, Holiday=green #EAF3DE). Timestamps as inline text next to badge.
 
-## Data Flow
-
-- **Faculty identity**: `auth.user.email` → query `faculty` table by email → get `faculty.id` → filter `schedule_entries` + `teaching_assignments` by faculty_id
-- **Student identity**: `auth.user.id` → query `profiles` table → get `batch_id` → filter `schedule_entries` by batch via teaching_assignments join
-- **Published schedule**: Find schedule with `status = 'published'`, use its entries
-- **Announcements**: Reuse `system_alerts` table (already created), display with type-based badges
-- **Availability**: Existing `faculty_preferences` table + hooks (already functional)
-- **Swap requests**: Existing `useSwapRequests` hook (returns empty until table exists — shows placeholder)
+## Color Reference (exact hex from HTML)
+- Lecture: bg=#E6F1FB, text=#0C447C, border=#85B7EB, dot=#185FA5
+- Lab: bg=#EAF3DE, text=#27500A, border=#97C459, dot=#3B6D11
+- Tutorial: bg=#FAEEDA, text=#633806, border=#EF9F27, dot=#854F0B
+- Pending: bg=#FAEEDA, text=#633806
+- Approved: bg=#EAF3DE, text=#27500A
+- Rejected: bg=#FCEBEB, text=#791F1F
+- Preferred: bg=#EAF3DE, border=#97C459
+- Unavailable: bg=#FCEBEB, border=#F09595
 
