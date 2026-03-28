@@ -9,11 +9,11 @@ import type { Database } from '@/integrations/supabase/types';
 type DayOfWeek = Database['public']['Enums']['day_of_week'];
 
 const DAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-const PREF_LABELS = ['Available', 'Preferred', 'Unavailable'] as const;
+
 const PREF_STYLES = [
-  'bg-secondary/30 text-muted-foreground',          // 0 = Available
-  'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20', // 1 = Preferred
-  'bg-red-500/15 text-red-400 border border-red-500/20',            // 2 = Unavailable
+  {}, // 0 = Available — default secondary
+  { background: '#EAF3DE', borderColor: '#97C459' }, // 1 = Preferred
+  { background: '#FCEBEB', borderColor: '#F09595' }, // 2 = Unavailable
 ];
 
 interface AvailabilityGridProps {
@@ -61,20 +61,24 @@ export function AvailabilityGrid({ facultyId }: AvailabilityGridProps) {
 
   return (
     <Card className="bg-card border-border">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+      <CardHeader className="pb-3 flex-row items-center justify-between">
+        <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Settings2 className="h-4 w-4 text-primary" />
           Availability Preferences
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Legend */}
         <div className="flex items-center gap-4 mb-3 text-[10px] text-muted-foreground">
-          {PREF_LABELS.map((label, i) => (
-            <span key={label} className="flex items-center gap-1">
-              <span className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-muted-foreground/30' : i === 1 ? 'bg-emerald-400' : 'bg-red-400'}`} />
-              {label}
-            </span>
-          ))}
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm bg-secondary border border-border" /> Available
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: '#EAF3DE', border: '1px solid #97C459' }} /> Preferred
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: '#FCEBEB', border: '1px solid #F09595' }} /> Unavailable
+          </span>
         </div>
 
         {!facultyId ? (
@@ -82,39 +86,46 @@ export function AvailabilityGrid({ facultyId }: AvailabilityGridProps) {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr>
-                    <th className="text-left text-muted-foreground p-1.5 w-20">Slot</th>
-                    {DAYS.map((d) => (
-                      <th key={d} className="text-center text-muted-foreground p-1.5 capitalize">{d.slice(0, 3)}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {timeSlots.map((slot) => (
-                    <tr key={slot.id}>
-                      <td className="text-muted-foreground p-1.5 font-mono whitespace-nowrap text-[10px]">{slot.label}</td>
-                      {DAYS.map((day) => {
-                        const key = `${day}-${slot.id}`;
-                        const pref = prefMap[key] ?? 0;
-                        return (
-                          <td key={key} className="p-1">
-                            <button
-                              onClick={() => handleClick(day, slot.id)}
-                              className={`w-full rounded-md px-1.5 py-1.5 text-center text-[10px] font-medium min-h-[28px] cursor-pointer transition-colors ${PREF_STYLES[pref]}`}
-                            >
-                              {PREF_LABELS[pref]}
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div
+                className="grid gap-[2px]"
+                style={{ gridTemplateColumns: `56px repeat(6, 1fr)` }}
+              >
+                {/* Header */}
+                <div />
+                {DAYS.map((d) => (
+                  <div key={d} className="text-[10px] text-center text-muted-foreground capitalize p-1 font-medium">
+                    {d.slice(0, 3)}
+                  </div>
+                ))}
+
+                {/* Rows */}
+                {timeSlots.map((slot) => (
+                  <>
+                    <div key={`l-${slot.id}`} className="text-[10px] text-muted-foreground font-mono flex items-center">
+                      {slot.label}
+                    </div>
+                    {DAYS.map((day) => {
+                      const key = `${day}-${slot.id}`;
+                      const pref = prefMap[key] ?? 0;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => handleClick(day, slot.id)}
+                          className="rounded min-h-[22px] border cursor-pointer transition-colors"
+                          style={
+                            pref === 0
+                              ? { background: 'hsl(var(--secondary))', borderColor: 'hsl(var(--border))' }
+                              : PREF_STYLES[pref]
+                          }
+                        />
+                      );
+                    })}
+                  </>
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">
+
+            <p className="text-[11px] text-muted-foreground mt-3">
               {summaryPreferred} preferred, {summaryUnavailable} unavailable slots set
             </p>
           </>

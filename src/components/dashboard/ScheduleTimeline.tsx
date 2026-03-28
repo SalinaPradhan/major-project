@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Clock } from 'lucide-react';
 
 export interface TimelineEntry {
@@ -14,21 +13,18 @@ export interface TimelineEntry {
   isFree?: boolean;
 }
 
-function getTypeLabel(isLab: boolean) {
-  return isLab ? 'Lab' : 'Lecture';
-}
-
-function getTypeStyles(isLab: boolean) {
-  if (isLab) return { dot: 'bg-emerald-400', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
-  return { dot: 'bg-blue-400', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
-}
+const TYPE_STYLES = {
+  lecture: { dot: '#185FA5', bg: '#E6F1FB', text: '#0C447C', border: '#85B7EB', label: 'Lecture' },
+  lab: { dot: '#3B6D11', bg: '#EAF3DE', text: '#27500A', border: '#97C459', label: 'Lab' },
+  tutorial: { dot: '#854F0B', bg: '#FAEEDA', text: '#633806', border: '#EF9F27', label: 'Tutorial' },
+};
 
 function isNextClass(startTime: string): boolean {
   const now = new Date();
   const [h, m] = startTime.split(':').map(Number);
-  const slotDate = new Date();
-  slotDate.setHours(h, m, 0, 0);
-  return slotDate > now;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d > now;
 }
 
 interface ScheduleTimelineProps {
@@ -42,12 +38,12 @@ export function ScheduleTimeline({ entries, loading }: ScheduleTimelineProps) {
   return (
     <Card className="bg-card border-border h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />
           Today's Schedule
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1 max-h-[420px] overflow-y-auto pr-2">
+      <CardContent className="space-y-0 max-h-[420px] overflow-y-auto pr-2">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : entries.length === 0 ? (
@@ -56,17 +52,18 @@ export function ScheduleTimeline({ entries, loading }: ScheduleTimelineProps) {
           entries.map((e) => {
             if (e.isFree) {
               return (
-                <div key={e.id} className="flex items-center gap-3 py-2 px-3 rounded-lg">
-                  <span className="text-xs text-muted-foreground w-24 shrink-0 font-mono">
+                <div key={e.id} className="flex items-center gap-3 py-3 px-3 border-b border-border/50 opacity-50">
+                  <span className="text-xs text-muted-foreground w-[72px] shrink-0 font-mono">
                     {e.startTime}–{e.endTime}
                   </span>
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30 shrink-0" />
                   <span className="text-sm text-muted-foreground italic">Free period</span>
                 </div>
               );
             }
 
-            const styles = getTypeStyles(e.isLab);
+            const type = e.isLab ? 'lab' : 'lecture';
+            const styles = TYPE_STYLES[type];
             let isNext = false;
             if (!foundNext && isNextClass(e.startTime)) {
               foundNext = true;
@@ -76,28 +73,36 @@ export function ScheduleTimeline({ entries, loading }: ScheduleTimelineProps) {
             return (
               <div
                 key={e.id}
-                className={`flex items-center gap-3 py-2 px-3 rounded-lg transition-colors ${
-                  isNext ? 'bg-primary/5 border-l-2 border-primary' : 'hover:bg-secondary/50'
+                className={`flex items-center gap-3 py-3 px-3 border-b border-border/50 transition-colors ${
+                  isNext ? 'border-l-2' : ''
                 }`}
+                style={isNext ? { borderLeftColor: '#185FA5', background: 'rgba(24,95,165,0.05)' } : undefined}
               >
-                <span className="text-xs text-muted-foreground w-24 shrink-0 font-mono">
+                <span className="text-xs text-muted-foreground w-[72px] shrink-0 font-mono">
                   {e.startTime}–{e.endTime}
                 </span>
-                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${styles.dot}`} />
+                <div
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: styles.dot }}
+                />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {e.courseName}
-                    <span className="text-muted-foreground font-normal"> · {e.batchName} · {e.roomName}</span>
+                  <p className="text-sm font-medium text-foreground truncate">{e.courseName}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {e.batchName} · {e.roomName}
+                    {e.roomCapacity ? ` (${e.roomCapacity})` : ''}
                   </p>
+                  {isNext && (
+                    <p className="text-[10px] font-medium mt-0.5" style={{ color: '#185FA5' }}>
+                      Next class
+                    </p>
+                  )}
                 </div>
-                <Badge variant="outline" className={`text-[10px] shrink-0 ${styles.badge}`}>
-                  {getTypeLabel(e.isLab)}
-                </Badge>
-                {isNext && (
-                  <Badge className="text-[10px] bg-primary/20 text-primary border-primary/30 shrink-0">
-                    Next
-                  </Badge>
-                )}
+                <span
+                  className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 border"
+                  style={{ background: styles.bg, color: styles.text, borderColor: styles.border }}
+                >
+                  {styles.label}
+                </span>
               </div>
             );
           })

@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeftRight, Plus } from 'lucide-react';
 import { useSwapRequests } from '@/hooks/useSwapRequests';
 
-const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  approved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-  rejected: 'bg-red-500/10 text-red-400 border-red-500/30',
+const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
+  pending: { bg: '#FAEEDA', text: '#633806' },
+  approved: { bg: '#EAF3DE', text: '#27500A' },
+  rejected: { bg: '#FCEBEB', text: '#791F1F' },
 };
 
 export function FacultySwapPanel() {
@@ -15,34 +15,51 @@ export function FacultySwapPanel() {
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
           <ArrowLeftRight className="h-4 w-4 text-primary" />
           Swap Requests
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-0">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : swaps.length === 0 ? (
           <p className="text-sm text-muted-foreground">No swap requests yet.</p>
         ) : (
-          swaps.map((swap) => (
-            <div
-              key={swap.id}
-              className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/50 transition-colors"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  {swap.fromDay} {swap.fromSlot} → {swap.toDay} {swap.toSlot}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{swap.reason}</p>
+          swaps.map((swap) => {
+            const style = STATUS_STYLES[swap.status] || STATUS_STYLES.pending;
+            return (
+              <div
+                key={swap.id}
+                className="flex items-start justify-between py-3 px-3 border-b border-border/50"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {swap.fromDay} {swap.fromSlot} → {swap.toDay} {swap.toSlot}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{swap.reason}</p>
+                  {swap.status === 'pending' && (
+                    <div className="flex gap-2 mt-2">
+                      <Button variant="outline" size="sm" className="h-6 text-[11px] px-2">Cancel</Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[11px] px-2">Details</Button>
+                    </div>
+                  )}
+                </div>
+                <span
+                  className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 ml-2 capitalize"
+                  style={{ background: style.bg, color: style.text }}
+                >
+                  {swap.status}
+                </span>
               </div>
-              <Badge variant="outline" className={`text-[10px] shrink-0 ml-2 ${STATUS_STYLES[swap.status] || ''}`}>
-                {swap.status}
-              </Badge>
-            </div>
-          ))
+            );
+          })
         )}
+
+        <Button variant="outline" className="w-full mt-3 gap-1.5 text-sm">
+          <Plus className="h-3.5 w-3.5" />
+          New swap request
+        </Button>
       </CardContent>
     </Card>
   );
