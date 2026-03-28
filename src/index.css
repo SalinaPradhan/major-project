@@ -106,11 +106,21 @@
   }
 
   .status-lecture {
-    @apply bg-primary/20 text-primary border-primary/30;
+    background: #E6F1FB;
+    color: #0C447C;
+    border-color: #85B7EB;
   }
 
   .status-lab {
-    @apply bg-accent/20 text-accent border-accent/30;
+    background: #EAF3DE;
+    color: #27500A;
+    border-color: #97C459;
+  }
+
+  .status-tutorial {
+    background: #FAEEDA;
+    color: #633806;
+    border-color: #EF9F27;
   }
 
   .status-warning {
@@ -119,6 +129,31 @@
 
   .status-available {
     @apply bg-success/20 text-success border-success/30;
+  }
+
+  .status-pending {
+    background: #FAEEDA;
+    color: #633806;
+  }
+
+  .status-approved {
+    background: #EAF3DE;
+    color: #27500A;
+  }
+
+  .status-rejected {
+    background: #FCEBEB;
+    color: #791F1F;
+  }
+
+  .pref-preferred {
+    background: #EAF3DE;
+    border-color: #97C459;
+  }
+
+  .pref-unavailable {
+    background: #FCEBEB;
+    border-color: #F09595;
   }
 }
 

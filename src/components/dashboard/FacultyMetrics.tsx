@@ -1,6 +1,3 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Clock, GraduationCap, ArrowLeftRight } from 'lucide-react';
-
 interface FacultyMetricsProps {
   todayClasses: number;
   nextClassTime: string | null;
@@ -26,59 +23,47 @@ export function FacultyMetrics({
 }: FacultyMetricsProps) {
   const loadPercent = maxWeeklyHours > 0 ? Math.round((weeklyLoad / maxWeeklyHours) * 100) : 0;
 
-  const cards = [
-    {
-      icon: BookOpen,
-      label: "Today's Classes",
-      value: todayClasses,
-      sub: nextClassTime ? `Next at ${nextClassTime}` : 'No more classes',
-      color: 'text-blue-400',
-      bg: 'bg-blue-500/10',
-    },
-    {
-      icon: Clock,
-      label: 'Weekly Load',
-      value: `${weeklyLoad}/${maxWeeklyHours}`,
-      sub: `${loadPercent}% utilized`,
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
-    },
-    {
-      icon: GraduationCap,
-      label: 'Semester Courses',
-      value: semesterCourses,
-      sub: `${lectureCount} lec · ${labCount} lab · ${tutorialCount} tut`,
-      color: 'text-violet-400',
-      bg: 'bg-violet-500/10',
-    },
-    {
-      icon: ArrowLeftRight,
-      label: 'Swap Requests',
-      value: pendingSwaps,
-      sub: pendingSwaps === 1 ? '1 pending' : `${pendingSwaps} pending`,
-      color: 'text-amber-400',
-      bg: 'bg-amber-500/10',
-    },
-  ];
-
   return (
-    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-      {cards.map((c) => (
-        <Card key={c.label} className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${c.bg}`}>
-                <c.icon className={`h-5 w-5 ${c.color}`} />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{c.label}</p>
-                <p className="text-xl font-bold text-foreground">{c.value}</p>
-                <p className="text-xs text-muted-foreground">{c.sub}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="flex gap-3 flex-wrap">
+      {/* Today's Classes */}
+      <div className="flex-1 min-w-[160px] bg-secondary rounded-xl px-4 py-3">
+        <p className="text-[11px] text-muted-foreground mb-1">Today's Classes</p>
+        <p className="text-[22px] font-medium text-foreground leading-tight">{todayClasses}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          {nextClassTime ? `Next at ${nextClassTime}` : 'No more today'}
+        </p>
+      </div>
+
+      {/* Weekly Load */}
+      <div className="flex-1 min-w-[160px] bg-secondary rounded-xl px-4 py-3">
+        <p className="text-[11px] text-muted-foreground mb-1">Weekly Load</p>
+        <p className="text-[22px] font-medium text-foreground leading-tight">
+          {weeklyLoad} / {maxWeeklyHours}
+        </p>
+        <p className="text-[11px] mt-0.5" style={{ color: '#3B6D11' }}>
+          {loadPercent}% · On track
+        </p>
+      </div>
+
+      {/* Semester Courses */}
+      <div className="flex-1 min-w-[160px] bg-secondary rounded-xl px-4 py-3">
+        <p className="text-[11px] text-muted-foreground mb-1">Semester Courses</p>
+        <p className="text-[22px] font-medium text-foreground leading-tight">{semesterCourses}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          {lectureCount} lec · {labCount} lab · {tutorialCount} tut
+        </p>
+      </div>
+
+      {/* Swap Requests */}
+      <div className="flex-1 min-w-[160px] bg-secondary rounded-xl px-4 py-3">
+        <p className="text-[11px] text-muted-foreground mb-1">Swap Requests</p>
+        <p className="text-[22px] font-medium leading-tight" style={{ color: pendingSwaps > 0 ? '#854F0B' : undefined }}>
+          {pendingSwaps}
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          {pendingSwaps === 1 ? '1 pending' : `${pendingSwaps} pending`}
+        </p>
+      </div>
     </div>
   );
 }

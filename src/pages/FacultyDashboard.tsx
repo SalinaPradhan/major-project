@@ -34,12 +34,10 @@ export default function FacultyDashboard() {
   const facultyId = facultyRecord?.id ?? null;
   const deptName = (facultyRecord as any)?.departments?.name ?? '';
 
-  // Published schedule
   const { data: schedules = [] } = useSchedules();
   const published = schedules.find((s) => s.status === 'published');
   const { data: entries = [], isLoading: entriesLoading } = useScheduleEntries(published?.id ?? null);
 
-  // Time slots
   const { data: timeSlots = [] } = useQuery({
     queryKey: ['time_slots'],
     queryFn: async () => {
@@ -49,7 +47,6 @@ export default function FacultyDashboard() {
     },
   });
 
-  // Teaching assignments for this faculty
   const { data: assignments = [] } = useQuery({
     queryKey: ['teaching_assignments', facultyId],
     enabled: !!facultyId,
@@ -65,13 +62,11 @@ export default function FacultyDashboard() {
 
   const { data: swaps = [] } = useSwapRequests();
 
-  // Filter entries for this faculty
   const facultyEntries = useMemo(() => {
     if (!facultyId) return [];
     return entries.filter((e: any) => e.teaching_assignment?.faculty_id === facultyId);
   }, [entries, facultyId]);
 
-  // Today's schedule timeline
   const todayEntries = useMemo((): TimelineEntry[] => {
     return facultyEntries
       .filter((e: any) => e.day === todayDay)
@@ -88,7 +83,6 @@ export default function FacultyDashboard() {
       }));
   }, [facultyEntries, todayDay]);
 
-  // Metrics
   const todayClasses = todayEntries.length;
   const nextClassTime = useMemo(() => {
     const now = new Date();
@@ -108,11 +102,9 @@ export default function FacultyDashboard() {
   const labAssignments = assignments.filter((a: any) => a.is_lab).length;
   const pendingSwaps = swaps.filter((s) => s.status === 'pending').length;
 
-  // Workload breakdown (hours from schedule entries)
   const lectureHours = facultyEntries.filter((e: any) => !e.teaching_assignment?.is_lab).length;
   const labHours = facultyEntries.filter((e: any) => e.teaching_assignment?.is_lab).length;
 
-  // Weekly grid
   const weeklyGrid = useMemo(() => {
     const grid: Record<string, GridCell> = {};
     facultyEntries.forEach((e: any) => {
@@ -128,31 +120,28 @@ export default function FacultyDashboard() {
   }, [facultyEntries]);
 
   const gridSlots = timeSlots.map((s) => ({
-    id: s.id,
-    label: s.label,
-    slotOrder: s.slot_order,
-    isBreak: s.is_break,
+    id: s.id, label: s.label, slotOrder: s.slot_order, isBreak: s.is_break,
   }));
 
   const loading = facultyLoading || entriesLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-3.5 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
             {initials}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Good morning, {displayName}</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-base font-semibold text-foreground">Good morning, {displayName}</h1>
+            <p className="text-[11px] text-muted-foreground">
               {deptName && `${deptName} · `}{todayStr}
             </p>
           </div>
         </div>
         <Link to="/timetable">
-          <Button variant="outline" size="sm" className="gap-1">
+          <Button variant="outline" size="sm" className="gap-1 text-xs">
             My timetable <ExternalLink className="h-3 w-3" />
           </Button>
         </Link>
@@ -171,10 +160,10 @@ export default function FacultyDashboard() {
         pendingSwaps={pendingSwaps}
       />
 
-      {/* Middle row: Timeline + Workload/Swaps */}
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      {/* Middle row */}
+      <div className="grid gap-3.5 lg:grid-cols-[1.4fr_1fr]">
         <ScheduleTimeline entries={todayEntries} loading={loading} />
-        <div className="space-y-6">
+        <div className="space-y-3.5">
           <WorkloadCard
             currentHours={weeklyLoad}
             maxHours={maxWeekly}
@@ -186,14 +175,9 @@ export default function FacultyDashboard() {
         </div>
       </div>
 
-      {/* Bottom row: Weekly Grid + Availability */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <WeeklyGrid
-          grid={weeklyGrid}
-          timeSlots={gridSlots}
-          days={DAYS}
-          loading={loading}
-        />
+      {/* Bottom row */}
+      <div className="grid gap-3.5 lg:grid-cols-2">
+        <WeeklyGrid grid={weeklyGrid} timeSlots={gridSlots} days={DAYS} loading={loading} />
         <AvailabilityGrid facultyId={facultyId} />
       </div>
     </div>
