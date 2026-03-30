@@ -180,16 +180,18 @@ export function VenueCalendar({ onBookClick, onRequestClick, readOnly = false }:
                     )}
                   </div>
                 ))}
-                <div className="pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />Book Another Venue
-                  </Button>
-                </div>
+                {!readOnly && (
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />Book Another Venue
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>

@@ -150,18 +150,22 @@ export default function VenueManagement() {
         </TabsContent>
       </Tabs>
 
-      <VenueBookingDialog
-        open={bookingDialogOpen}
-        onOpenChange={setBookingDialogOpen}
-        defaultDate={bookingDate}
-        defaultVenueId={bookingVenueId}
-      />
+      {!isStudent && (
+        <VenueBookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          defaultDate={bookingDate}
+          defaultVenueId={bookingVenueId}
+        />
+      )}
 
-      <VenueRequestDialog
-        open={requestDialogOpen}
-        onOpenChange={setRequestDialogOpen}
-        booking={selectedBooking}
-      />
+      {!isStudent && (
+        <VenueRequestDialog
+          open={requestDialogOpen}
+          onOpenChange={setRequestDialogOpen}
+          booking={selectedBooking}
+        />
+      )}
     </div>
   );
 }
