@@ -17,7 +17,7 @@ interface VenueCalendarProps {
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function VenueCalendar({ onBookClick, onRequestClick }: VenueCalendarProps) {
+export function VenueCalendar({ onBookClick, onRequestClick, readOnly = false }: VenueCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { data: bookings = [] } = useVenueBookings();
