@@ -59,9 +59,11 @@ export default function VenueManagement() {
           <h1 className="text-2xl font-bold text-foreground">Venue Management</h1>
           <Badge variant="secondary">{allBookings.length} bookings</Badge>
         </div>
-        <Button onClick={() => { setBookingDate(''); setBookingDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Book Venue
-        </Button>
+        {!isStudent && (
+          <Button onClick={() => { setBookingDate(''); setBookingDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />Book Venue
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="calendar">
