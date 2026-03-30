@@ -168,7 +168,7 @@ export function VenueCalendar({ onBookClick, onRequestClick, readOnly = false }:
                     </div>
                     <p className="text-xs opacity-70">{b.description}</p>
                     <p className="text-xs font-medium">Hosted by: {b.host_name}</p>
-                    {user?.id !== b.host_id && (
+                    {!readOnly && user?.id !== b.host_id && (
                       <Button
                         size="sm"
                         variant="outline"
