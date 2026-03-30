@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface VenueCalendarProps {
   onBookClick: (date: string) => void;
   onRequestClick: (booking: VenueBooking) => void;
+  readOnly?: boolean;
 }
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
