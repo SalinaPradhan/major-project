@@ -71,12 +71,16 @@ export default function VenueManagement() {
           <TabsTrigger value="calendar" className="gap-1.5">
             <CalendarDays className="h-4 w-4" />Calendar
           </TabsTrigger>
-          <TabsTrigger value="my-bookings" className="gap-1.5">
-            <List className="h-4 w-4" />My Bookings
-          </TabsTrigger>
-          <TabsTrigger value="requests" className="gap-1.5">
-            <Inbox className="h-4 w-4" />Requests
-          </TabsTrigger>
+          {!isStudent && (
+            <TabsTrigger value="my-bookings" className="gap-1.5">
+              <List className="h-4 w-4" />My Bookings
+            </TabsTrigger>
+          )}
+          {!isStudent && (
+            <TabsTrigger value="requests" className="gap-1.5">
+              <Inbox className="h-4 w-4" />Requests
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="calendar">
