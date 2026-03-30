@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 
 export default function VenueManagement() {
-  const { user } = useAuth();
+  const { user, isStudent } = useAuth();
   const { data: allBookings = [], isLoading } = useVenueBookings();
   const cancelBooking = useCancelVenueBooking();
   const [searchParams] = useSearchParams();
