@@ -89,7 +89,7 @@ export default function VenueManagement() {
               {isLoading ? (
                 <p className="text-center text-muted-foreground py-8">Loading...</p>
               ) : (
-                <VenueCalendar onBookClick={handleBookClick} onRequestClick={handleRequestClick} />
+                <VenueCalendar onBookClick={handleBookClick} onRequestClick={handleRequestClick} readOnly={isStudent} />
               )}
             </CardContent>
           </Card>
