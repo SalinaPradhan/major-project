@@ -12,11 +12,12 @@ import { useAuth } from '@/contexts/AuthContext';
 interface VenueCalendarProps {
   onBookClick: (date: string) => void;
   onRequestClick: (booking: VenueBooking) => void;
+  readOnly?: boolean;
 }
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function VenueCalendar({ onBookClick, onRequestClick }: VenueCalendarProps) {
+export function VenueCalendar({ onBookClick, onRequestClick, readOnly = false }: VenueCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { data: bookings = [] } = useVenueBookings();
@@ -144,9 +145,11 @@ export function VenueCalendar({ onBookClick, onRequestClick }: VenueCalendarProp
             {selectedBookings.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground text-sm mb-4">No events on this date</p>
-                <Button onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}>
-                  <Plus className="h-4 w-4 mr-2" />Book Venue
-                </Button>
+                {!readOnly && (
+                  <Button onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}>
+                    <Plus className="h-4 w-4 mr-2" />Book Venue
+                  </Button>
+                )}
               </div>
             ) : (
               <>
@@ -165,7 +168,7 @@ export function VenueCalendar({ onBookClick, onRequestClick }: VenueCalendarProp
                     </div>
                     <p className="text-xs opacity-70">{b.description}</p>
                     <p className="text-xs font-medium">Hosted by: {b.host_name}</p>
-                    {user?.id !== b.host_id && (
+                    {!readOnly && user?.id !== b.host_id && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -177,16 +180,18 @@ export function VenueCalendar({ onBookClick, onRequestClick }: VenueCalendarProp
                     )}
                   </div>
                 ))}
-                <div className="pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />Book Another Venue
-                  </Button>
-                </div>
+                {!readOnly && (
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />Book Another Venue
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>

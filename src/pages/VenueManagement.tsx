@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 
 export default function VenueManagement() {
-  const { user } = useAuth();
+  const { user, isStudent } = useAuth();
   const { data: allBookings = [], isLoading } = useVenueBookings();
   const cancelBooking = useCancelVenueBooking();
   const [searchParams] = useSearchParams();
@@ -59,9 +59,11 @@ export default function VenueManagement() {
           <h1 className="text-2xl font-bold text-foreground">Venue Management</h1>
           <Badge variant="secondary">{allBookings.length} bookings</Badge>
         </div>
-        <Button onClick={() => { setBookingDate(''); setBookingDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Book Venue
-        </Button>
+        {!isStudent && (
+          <Button onClick={() => { setBookingDate(''); setBookingDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />Book Venue
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="calendar">
@@ -69,12 +71,16 @@ export default function VenueManagement() {
           <TabsTrigger value="calendar" className="gap-1.5">
             <CalendarDays className="h-4 w-4" />Calendar
           </TabsTrigger>
-          <TabsTrigger value="my-bookings" className="gap-1.5">
-            <List className="h-4 w-4" />My Bookings
-          </TabsTrigger>
-          <TabsTrigger value="requests" className="gap-1.5">
-            <Inbox className="h-4 w-4" />Requests
-          </TabsTrigger>
+          {!isStudent && (
+            <TabsTrigger value="my-bookings" className="gap-1.5">
+              <List className="h-4 w-4" />My Bookings
+            </TabsTrigger>
+          )}
+          {!isStudent && (
+            <TabsTrigger value="requests" className="gap-1.5">
+              <Inbox className="h-4 w-4" />Requests
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="calendar">
@@ -83,7 +89,7 @@ export default function VenueManagement() {
               {isLoading ? (
                 <p className="text-center text-muted-foreground py-8">Loading...</p>
               ) : (
-                <VenueCalendar onBookClick={handleBookClick} onRequestClick={handleRequestClick} />
+                <VenueCalendar onBookClick={handleBookClick} onRequestClick={handleRequestClick} readOnly={isStudent} />
               )}
             </CardContent>
           </Card>
@@ -144,18 +150,22 @@ export default function VenueManagement() {
         </TabsContent>
       </Tabs>
 
-      <VenueBookingDialog
-        open={bookingDialogOpen}
-        onOpenChange={setBookingDialogOpen}
-        defaultDate={bookingDate}
-        defaultVenueId={bookingVenueId}
-      />
+      {!isStudent && (
+        <VenueBookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          defaultDate={bookingDate}
+          defaultVenueId={bookingVenueId}
+        />
+      )}
 
-      <VenueRequestDialog
-        open={requestDialogOpen}
-        onOpenChange={setRequestDialogOpen}
-        booking={selectedBooking}
-      />
+      {!isStudent && (
+        <VenueRequestDialog
+          open={requestDialogOpen}
+          onOpenChange={setRequestDialogOpen}
+          booking={selectedBooking}
+        />
+      )}
     </div>
   );
 }
