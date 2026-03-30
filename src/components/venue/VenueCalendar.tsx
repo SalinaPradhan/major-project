@@ -145,9 +145,11 @@ export function VenueCalendar({ onBookClick, onRequestClick, readOnly = false }:
             {selectedBookings.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground text-sm mb-4">No events on this date</p>
-                <Button onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}>
-                  <Plus className="h-4 w-4 mr-2" />Book Venue
-                </Button>
+                {!readOnly && (
+                  <Button onClick={() => { setSelectedDate(null); onBookClick(selectedDateStr); }}>
+                    <Plus className="h-4 w-4 mr-2" />Book Venue
+                  </Button>
+                )}
               </div>
             ) : (
               <>
