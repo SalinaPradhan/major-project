@@ -1,25 +1,20 @@
 
 
-# Plan: Make Venue Management Read-Only for Students
+# Plan: Add Sample Data to Student & Faculty Dashboards
 
-## Problem
-The Venue Management page (`/venue-management`) currently allows all users—including students—to book venues. Students should only be able to **view** the calendar and bookings, not create bookings or send requests.
+## Database Changes (5 operations via insert tool)
 
-## Changes
+1. **Publish the schedule** — `UPDATE schedules SET status = 'published'` for the existing schedule
+2. **Link student to batch** — `UPDATE profiles SET batch_id = 'CS-2026-A batch id'` for student user
+3. **Link faculty email** — `UPDATE faculty SET email = 'faculty@tros.edu'` on Dr. Sharma's record
+4. **Insert ~6 schedule entries** for Mon/Tue/Thu to fill out CS-2026-A's week (need to query existing teaching_assignments and time_slots to get valid IDs)
+5. **Insert 4 system alerts** — academic announcements (timetable published, room change, faculty day, exam schedule)
 
-### `src/pages/VenueManagement.tsx`
-1. Use `isStudent` from `useAuth()` to determine read-only mode
-2. **Hide** the "Book Venue" button in the header for students
-3. **Hide** the "My Bookings" and "Requests" tabs for students (they have nothing to manage)
-4. Pass a `readOnly` prop to `VenueCalendar` so the "Book" and "Request" buttons inside the calendar day-detail dialog are hidden for students
-5. Don't render `VenueBookingDialog` or `VenueRequestDialog` for students
+## Code Change
 
-### `src/components/venue/VenueCalendar.tsx`
-1. Add a `readOnly` prop (already exists as a pattern in `EventCalendar`)
-2. When `readOnly` is true, hide the "Book This Date" button in the day-detail modal and hide the "Request to Join" button on existing bookings
-3. Students can still click dates and view event details (host name, description, time, venue) — just no action buttons
+- **`src/hooks/useSwapRequests.ts`** — Replace empty array return with 3 hardcoded sample swap requests (2 pending, 1 approved) so the Faculty Dashboard swap panel renders content
 
-## Files Modified
-- `src/pages/VenueManagement.tsx` — conditional rendering based on `isStudent`
-- `src/components/venue/VenueCalendar.tsx` — add `readOnly` prop support
+## Result
+- Student dashboard shows today's classes, weekly grid, countdown, announcements
+- Faculty dashboard shows Dr. Sharma's schedule, workload, weekly grid, swap requests
 
