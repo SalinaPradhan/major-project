@@ -20,8 +20,45 @@ export const useSwapRequests = () => {
   return useQuery({
     queryKey: ['swap_requests'],
     queryFn: async (): Promise<SwapRequest[]> => {
-      // TODO: Query swap_requests table once created
-      return [];
+      // Sample data until swap_requests table is created
+      return [
+        {
+          id: 'swap-1',
+          requesterId: 'faculty-1',
+          requesterName: 'Dr. Gupta',
+          fromDay: 'Monday',
+          fromSlot: 'Period 1',
+          toDay: 'Wednesday',
+          toSlot: 'Period 3',
+          reason: 'Department meeting conflict on Monday mornings',
+          status: 'pending',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+        },
+        {
+          id: 'swap-2',
+          requesterId: 'faculty-2',
+          requesterName: 'Dr. Patel',
+          fromDay: 'Thursday',
+          fromSlot: 'Period 5',
+          toDay: 'Friday',
+          toSlot: 'Period 2',
+          reason: 'Lab equipment availability on Friday',
+          status: 'pending',
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+        },
+        {
+          id: 'swap-3',
+          requesterId: 'faculty-3',
+          requesterName: 'Dr. Singh',
+          fromDay: 'Tuesday',
+          fromSlot: 'Period 4',
+          toDay: 'Tuesday',
+          toSlot: 'Period 6',
+          reason: 'Student feedback — prefer afternoon slot',
+          status: 'approved',
+          createdAt: new Date(Date.now() - 432000000).toISOString(),
+        },
+      ];
     },
   });
 };
