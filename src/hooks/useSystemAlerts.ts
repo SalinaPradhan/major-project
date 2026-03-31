@@ -15,8 +15,9 @@ export const useSystemAlerts = (limit?: number) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
-      .channel('system_alerts_realtime')
+    const channelName = `system_alerts_${Math.random().toString(36).slice(2)}`;
+    const channel = supabase.channel(channelName);
+    channel
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_alerts' }, () => {
         queryClient.invalidateQueries({ queryKey: ['system_alerts'] });
       })
