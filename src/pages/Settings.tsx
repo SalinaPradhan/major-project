@@ -2,8 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Settings as SettingsIcon, Bell, Palette, Globe } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Settings() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -22,7 +25,7 @@ export default function Settings() {
         <Card className="glass-card">
           <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Palette className="h-4 w-4" /> Appearance</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between"><Label htmlFor="dark-mode">Dark mode</Label><Switch id="dark-mode" defaultChecked /></div>
+            <div className="flex items-center justify-between"><Label htmlFor="dark-mode">Dark mode</Label><Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={toggleTheme} /></div>
             <div className="flex items-center justify-between"><Label htmlFor="compact">Compact view</Label><Switch id="compact" /></div>
           </CardContent>
         </Card>
