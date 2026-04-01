@@ -32,6 +32,10 @@ export function Header({ title, subtitle }: HeaderProps) {
           />
         </div>
 
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground hover:text-foreground">
+          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
+
         <Link to="/alerts">
           <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
             <Bell className="h-5 w-5" />
