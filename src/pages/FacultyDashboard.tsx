@@ -171,7 +171,7 @@ export default function FacultyDashboard() {
             labHours={labHours}
             tutorialHours={0}
           />
-          <FacultySwapPanel />
+          <FacultySwapPanel facultyId={facultyId} requesterName={displayName} />
         </div>
       </div>
 

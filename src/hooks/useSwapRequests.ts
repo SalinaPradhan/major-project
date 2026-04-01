@@ -1,74 +1,88 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-// Swap requests are a planned feature — this hook provides the interface
-// once the swap_requests table is created. For now it returns empty data.
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface SwapRequest {
   id: string;
   requesterId: string;
+  facultyId: string;
   requesterName: string;
   fromDay: string;
   fromSlot: string;
+  fromSlotId: string;
   toDay: string;
   toSlot: string;
+  toSlotId: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
 }
 
-export const useSwapRequests = () => {
+export const useSwapRequests = (facultyId?: string | null) => {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ['swap_requests'],
+    queryKey: ['swap_requests', facultyId],
+    enabled: !!user,
     queryFn: async (): Promise<SwapRequest[]> => {
-      // Sample data until swap_requests table is created
-      return [
-        {
-          id: 'swap-1',
-          requesterId: 'faculty-1',
-          requesterName: 'Dr. Gupta',
-          fromDay: 'Monday',
-          fromSlot: 'Period 1',
-          toDay: 'Wednesday',
-          toSlot: 'Period 3',
-          reason: 'Department meeting conflict on Monday mornings',
-          status: 'pending',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: 'swap-2',
-          requesterId: 'faculty-2',
-          requesterName: 'Dr. Patel',
-          fromDay: 'Thursday',
-          fromSlot: 'Period 5',
-          toDay: 'Friday',
-          toSlot: 'Period 2',
-          reason: 'Lab equipment availability on Friday',
-          status: 'pending',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-        },
-        {
-          id: 'swap-3',
-          requesterId: 'faculty-3',
-          requesterName: 'Dr. Singh',
-          fromDay: 'Tuesday',
-          fromSlot: 'Period 4',
-          toDay: 'Tuesday',
-          toSlot: 'Period 6',
-          reason: 'Student feedback — prefer afternoon slot',
-          status: 'approved',
-          createdAt: new Date(Date.now() - 432000000).toISOString(),
-        },
-      ];
+      let query = supabase
+        .from('swap_requests')
+        .select('*, from_slot:time_slots!swap_requests_from_slot_id_fkey(label), to_slot:time_slots!swap_requests_to_slot_id_fkey(label)')
+        .order('created_at', { ascending: false });
+
+      if (facultyId) {
+        query = query.eq('faculty_id', facultyId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        requesterId: r.requester_id,
+        facultyId: r.faculty_id,
+        requesterName: r.requester_name,
+        fromDay: r.from_day,
+        fromSlot: r.from_slot?.label ?? r.from_day,
+        fromSlotId: r.from_slot_id,
+        toDay: r.to_day,
+        toSlot: r.to_slot?.label ?? r.to_day,
+        toSlotId: r.to_slot_id,
+        reason: r.reason,
+        status: r.status,
+        createdAt: r.created_at,
+      }));
     },
   });
 };
 
+interface CreateSwapInput {
+  facultyId: string;
+  requesterName: string;
+  fromDay: string;
+  fromSlotId: string;
+  toDay: string;
+  toSlotId: string;
+  reason: string;
+}
+
 export const useCreateSwapRequest = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
   return useMutation({
-    mutationFn: async (_request: Omit<SwapRequest, 'id' | 'status' | 'createdAt'>) => {
-      // TODO: Insert into swap_requests table
-      throw new Error('Swap requests table not yet configured');
+    mutationFn: async (input: CreateSwapInput) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase.from('swap_requests').insert({
+        requester_id: user.id,
+        faculty_id: input.facultyId,
+        requester_name: input.requesterName,
+        from_day: input.fromDay as any,
+        from_slot_id: input.fromSlotId,
+        to_day: input.toDay as any,
+        to_slot_id: input.toSlotId,
+        reason: input.reason,
+      });
+      if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['swap_requests'] }),
   });
@@ -77,9 +91,12 @@ export const useCreateSwapRequest = () => {
 export const useUpdateSwapRequestStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (_params: { id: string; status: 'approved' | 'rejected' }) => {
-      // TODO: Update swap_requests table
-      throw new Error('Swap requests table not yet configured');
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from('swap_requests')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['swap_requests'] }),
   });
