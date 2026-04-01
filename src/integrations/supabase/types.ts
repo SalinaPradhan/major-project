@@ -589,6 +589,63 @@ export type Database = {
         }
         Relationships: []
       }
+      swap_requests: {
+        Row: {
+          created_at: string
+          faculty_id: string
+          from_day: Database["public"]["Enums"]["day_of_week"]
+          from_slot_id: string
+          id: string
+          reason: string
+          requester_id: string
+          requester_name: string
+          status: string
+          to_day: Database["public"]["Enums"]["day_of_week"]
+          to_slot_id: string
+        }
+        Insert: {
+          created_at?: string
+          faculty_id: string
+          from_day: Database["public"]["Enums"]["day_of_week"]
+          from_slot_id: string
+          id?: string
+          reason?: string
+          requester_id: string
+          requester_name: string
+          status?: string
+          to_day: Database["public"]["Enums"]["day_of_week"]
+          to_slot_id: string
+        }
+        Update: {
+          created_at?: string
+          faculty_id?: string
+          from_day?: Database["public"]["Enums"]["day_of_week"]
+          from_slot_id?: string
+          id?: string
+          reason?: string
+          requester_id?: string
+          requester_name?: string
+          status?: string
+          to_day?: Database["public"]["Enums"]["day_of_week"]
+          to_slot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swap_requests_from_slot_id_fkey"
+            columns: ["from_slot_id"]
+            isOneToOne: false
+            referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_requests_to_slot_id_fkey"
+            columns: ["to_slot_id"]
+            isOneToOne: false
+            referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_alerts: {
         Row: {
           alert_type: string
