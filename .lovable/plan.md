@@ -1,26 +1,44 @@
 
 
-# Plan: Add Functional Dark/Light Mode Toggle
+# Plan: Scope AI Scheduler by Department & Batch
 
-## What needs to happen
+## Problem
 
-1. **Add light theme CSS variables** in `src/index.css` — define a proper light color palette under `:root` and move the current dark colors under `.dark`
-2. **Create a `ThemeProvider` context** (`src/contexts/ThemeContext.tsx`) that reads/writes theme preference to `localStorage`, applies/removes the `dark` class on `<html>`, and exposes a `toggleTheme` function
-3. **Wrap the app** with `ThemeProvider` in `src/main.tsx`
-4. **Make the Settings page toggle functional** — wire the existing dark mode `Switch` to the theme context
-5. **Add a small theme toggle button in the Header** (`src/components/layout/Header.tsx`) — a Sun/Moon icon button next to the bell icon, visible on all dashboards (admin, faculty, student)
+The edge function `generate-timetable` fetches **all** `teaching_assignments` regardless of which schedule is being generated. So CSE-A and CSE-B both generate the same global timetable. The second one overwrites its own entries but uses the same pool of assignments, rooms, and slots — leading to identical or conflicting results.
 
-## Files to create/modify
+## Solution
 
-| File | Change |
+Add `department_id` and `batch_ids` columns to `schedules`, add Department/Batch pickers to the schedule form, and filter `teaching_assignments` in the edge function.
+
+## Changes
+
+### 1. Database Migration
+- Add `department_id uuid` and `batch_ids uuid[]` to `schedules` table
+
+### 2. Schedule Form (`ScheduleFormDialog.tsx`)
+- Add optional **Department** dropdown (from `useDepartments`)
+- Add optional **Batches** multi-select (from `useBatches`, filtered by selected department)
+- Save `department_id` and `batch_ids` to the schedule record
+
+### 3. Edge Function (`generate-timetable/index.ts`)
+- Read `department_id` and `batch_ids` from the schedule record
+- Filter the `teaching_assignments` query:
+  - If `batch_ids` is set → filter `batch_id in batch_ids`
+  - Else if `department_id` is set → join through `courses.department_id` to filter
+  - Else → use all assignments (current behavior, backward compatible)
+
+### 4. Scheduler Page (`Scheduler.tsx`)
+- Show scope label on each schedule card (e.g. "CS Dept • 2 batches" or "All")
+
+### 5. Hook (`useGenerateTimetable.ts`)
+- No changes needed — it already passes `scheduleId`, and the edge function will read scope from the schedule record itself
+
+## Files
+
+| File | Action |
 |------|--------|
-| `src/index.css` | Move dark colors to `.dark`, add light theme colors to `:root` |
-| `src/contexts/ThemeContext.tsx` | New — theme context with localStorage persistence |
-| `src/main.tsx` | Wrap app with `ThemeProvider` |
-| `src/pages/Settings.tsx` | Wire dark mode switch to `useTheme()` |
-| `src/components/layout/Header.tsx` | Add Sun/Moon toggle button |
-
-## Light theme color palette
-
-Professional university aesthetic — white/gray backgrounds, dark text, same primary (cyan-blue) and accent (green) hues adjusted for light backgrounds.
+| Database migration | Add 2 columns to `schedules` |
+| `supabase/functions/generate-timetable/index.ts` | Filter assignments by scope |
+| `src/components/forms/ScheduleFormDialog.tsx` | Add Dept + Batch pickers |
+| `src/pages/Scheduler.tsx` | Show scope on cards |
 
