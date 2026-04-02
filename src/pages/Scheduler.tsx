@@ -104,7 +104,16 @@ export default function Scheduler() {
                   <Badge variant="outline" className={statusColors[s.status]}>{s.status}</Badge>
                 </div>
                 <CardDescription>
-                  {s.fitness_score != null ? `Fitness: ${s.fitness_score.toFixed(2)}` : 'Not yet generated'}
+                  {(() => {
+                    const dept = (s as any).departments?.name;
+                    const batchCount = ((s as any).batch_ids as string[] | null)?.length ?? 0;
+                    const scopeLabel = dept
+                      ? `${dept}${batchCount > 0 ? ` · ${batchCount} batch(es)` : ''}`
+                      : batchCount > 0 ? `${batchCount} batch(es)` : 'All departments';
+                    return scopeLabel;
+                  })()}
+                  {s.fitness_score != null && ` · Fitness: ${s.fitness_score.toFixed(2)}`}
+                  {s.fitness_score == null && ' · Not yet generated'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
