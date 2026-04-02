@@ -254,19 +254,47 @@ Deno.serve(async (req) => {
 
     jobId = job?.id;
 
+    // Fetch schedule scope (department_id, batch_ids)
+    const { data: scheduleRecord } = await supabase
+      .from("schedules")
+      .select("department_id, batch_ids")
+      .eq("id", schedule_id)
+      .single();
+
+    const scopeDeptId = scheduleRecord?.department_id ?? null;
+    const scopeBatchIds: string[] = (scheduleRecord?.batch_ids as string[] | null) ?? [];
+
+    // Build teaching_assignments query with scope filtering
+    let assignmentsQuery = supabase
+      .from("teaching_assignments")
+      .select("*, course:courses(lecture_hours, lab_hours, department_id), batch:batches(strength)");
+
+    if (scopeBatchIds.length > 0) {
+      assignmentsQuery = assignmentsQuery.in("batch_id", scopeBatchIds);
+    } else if (scopeDeptId) {
+      // Filter by department through courses
+      assignmentsQuery = assignmentsQuery.eq("course.department_id", scopeDeptId);
+    }
+
     const [
-      { data: assignments },
+      { data: rawAssignments },
       { data: rooms },
       { data: timeSlots },
       { data: facultyList },
       { data: preferences },
     ] = await Promise.all([
-      supabase.from("teaching_assignments").select("*, course:courses(lecture_hours, lab_hours), batch:batches(strength)"),
+      assignmentsQuery,
       supabase.from("rooms").select("*"),
       supabase.from("time_slots").select("*"),
       supabase.from("faculty").select("*"),
       supabase.from("faculty_preferences").select("*"),
     ]);
+
+    // When filtering by department through join, PostgREST returns rows with null course
+    // Filter those out
+    const assignments = scopeDeptId && scopeBatchIds.length === 0
+      ? (rawAssignments || []).filter((a: any) => a.course !== null)
+      : rawAssignments;
 
     if (!assignments?.length || !rooms?.length || !timeSlots?.length) {
       return new Response(

@@ -546,8 +546,10 @@ export type Database = {
       }
       schedules: {
         Row: {
+          batch_ids: string[] | null
           created_at: string
           current_version: number | null
+          department_id: string | null
           fitness_score: number | null
           generation_count: number | null
           hard_constraint_violations: number | null
@@ -560,8 +562,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          batch_ids?: string[] | null
           created_at?: string
           current_version?: number | null
+          department_id?: string | null
           fitness_score?: number | null
           generation_count?: number | null
           hard_constraint_violations?: number | null
@@ -574,8 +578,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          batch_ids?: string[] | null
           created_at?: string
           current_version?: number | null
+          department_id?: string | null
           fitness_score?: number | null
           generation_count?: number | null
           hard_constraint_violations?: number | null
@@ -587,7 +593,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["schedule_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "schedules_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       swap_requests: {
         Row: {
