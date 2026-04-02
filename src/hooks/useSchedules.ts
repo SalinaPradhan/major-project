@@ -8,7 +8,7 @@ export const useSchedules = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schedules')
-        .select('*')
+        .select('*, departments(name)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
