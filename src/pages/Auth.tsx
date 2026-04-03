@@ -29,6 +29,9 @@ export default function Auth() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [configuringRole, setConfiguringRole] = useState<SignupRole | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
