@@ -324,7 +324,10 @@ export default function Auth() {
                         <Label htmlFor="signup-confirm">Confirm Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input id="signup-confirm" type="password" placeholder="••••••••" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} className="pl-10 bg-secondary/50" />
+                          <Input id="signup-confirm" type={showSignupConfirmPassword ? 'text' : 'password'} placeholder="••••••••" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} className="pl-10 pr-10 bg-secondary/50" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)} tabIndex={-1}>
+                            {showSignupConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                         {errors.signupConfirmPassword && <p className="text-xs text-destructive">{errors.signupConfirmPassword}</p>}
                       </div>
