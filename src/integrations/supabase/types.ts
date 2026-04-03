@@ -50,6 +50,42 @@ export type Database = {
         }
         Relationships: []
       }
+      assets: {
+        Row: {
+          assigned_to: string | null
+          code: string
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       batches: {
         Row: {
           created_at: string
@@ -602,6 +638,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      support_staff: {
+        Row: {
+          created_at: string
+          department: string
+          email: string | null
+          id: string
+          name: string
+          role: string
+          shift: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email?: string | null
+          id?: string
+          name: string
+          role?: string
+          shift?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string | null
+          id?: string
+          name?: string
+          role?: string
+          shift?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       swap_requests: {
         Row: {

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, Loader2, Mail, Lock, User, ArrowLeft, GraduationCap, Users, Shield } from 'lucide-react';
+import { Brain, Loader2, Mail, Lock, User, ArrowLeft, GraduationCap, Users, Shield, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
@@ -29,6 +29,9 @@ export default function Auth() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [configuringRole, setConfiguringRole] = useState<SignupRole | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -244,7 +247,10 @@ export default function Auth() {
                         <Label htmlFor="login-password">Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="pl-10 bg-secondary/50" />
+                          <Input id="login-password" type={showLoginPassword ? 'text' : 'password'} placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="pl-10 pr-10 bg-secondary/50" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowLoginPassword(!showLoginPassword)} tabIndex={-1}>
+                            {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                         {errors.loginPassword && <p className="text-xs text-destructive">{errors.loginPassword}</p>}
                       </div>
@@ -306,7 +312,10 @@ export default function Auth() {
                         <Label htmlFor="signup-password">Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input id="signup-password" type="password" placeholder="••••••••" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} className="pl-10 bg-secondary/50" />
+                          <Input id="signup-password" type={showSignupPassword ? 'text' : 'password'} placeholder="••••••••" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} className="pl-10 pr-10 bg-secondary/50" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowSignupPassword(!showSignupPassword)} tabIndex={-1}>
+                            {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                         {errors.signupPassword && <p className="text-xs text-destructive">{errors.signupPassword}</p>}
                       </div>
@@ -315,7 +324,10 @@ export default function Auth() {
                         <Label htmlFor="signup-confirm">Confirm Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input id="signup-confirm" type="password" placeholder="••••••••" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} className="pl-10 bg-secondary/50" />
+                          <Input id="signup-confirm" type={showSignupConfirmPassword ? 'text' : 'password'} placeholder="••••••••" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} className="pl-10 pr-10 bg-secondary/50" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)} tabIndex={-1}>
+                            {showSignupConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                         {errors.signupConfirmPassword && <p className="text-xs text-destructive">{errors.signupConfirmPassword}</p>}
                       </div>
