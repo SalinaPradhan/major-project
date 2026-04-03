@@ -1,44 +1,77 @@
 
 
-# Plan: Scope AI Scheduler by Department & Batch
+# Plan: Implement Assets & Staff CRUD + Password Visibility Toggle
 
-## Problem
+## Two features in this plan
 
-The edge function `generate-timetable` fetches **all** `teaching_assignments` regardless of which schedule is being generated. So CSE-A and CSE-B both generate the same global timetable. The second one overwrites its own entries but uses the same pool of assignments, rooms, and slots — leading to identical or conflicting results.
+### Feature A: Password visibility toggle on Auth page
 
-## Solution
+Add an eye/eye-off icon button to the password and confirm-password fields on both the Sign In and Sign Up forms, toggling between `type="password"` and `type="text"`.
 
-Add `department_id` and `batch_ids` columns to `schedules`, add Department/Batch pickers to the schedule form, and filter `teaching_assignments` in the edge function.
+**File:** `src/pages/Auth.tsx`
+- Add `showLoginPassword`, `showSignupPassword`, `showSignupConfirmPassword` state booleans
+- Replace the `Lock` icon area with a clickable Eye/EyeOff toggle on the right side of each password input
+- Toggle input `type` between `"password"` and `"text"`
 
-## Changes
+### Feature B: Full CRUD for Assets and Support Staff
 
-### 1. Database Migration
-- Add `department_id uuid` and `batch_ids uuid[]` to `schedules` table
+#### 1. Database Migration
+Create two tables:
 
-### 2. Schedule Form (`ScheduleFormDialog.tsx`)
-- Add optional **Department** dropdown (from `useDepartments`)
-- Add optional **Batches** multi-select (from `useBatches`, filtered by selected department)
-- Save `department_id` and `batch_ids` to the schedule record
+```sql
+-- assets table
+CREATE TABLE public.assets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  code text NOT NULL,
+  type text NOT NULL DEFAULT 'equipment',
+  location text,
+  status text NOT NULL DEFAULT 'working',
+  assigned_to text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
+-- Admin full CRUD, authenticated read
 
-### 3. Edge Function (`generate-timetable/index.ts`)
-- Read `department_id` and `batch_ids` from the schedule record
-- Filter the `teaching_assignments` query:
-  - If `batch_ids` is set → filter `batch_id in batch_ids`
-  - Else if `department_id` is set → join through `courses.department_id` to filter
-  - Else → use all assignments (current behavior, backward compatible)
+-- support_staff table
+CREATE TABLE public.support_staff (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  email text,
+  department text NOT NULL,
+  role text NOT NULL DEFAULT 'lab_assistant',
+  shift text NOT NULL DEFAULT 'full_day',
+  status text NOT NULL DEFAULT 'available',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.support_staff ENABLE ROW LEVEL SECURITY;
+-- Admin full CRUD, authenticated read
+```
 
-### 4. Scheduler Page (`Scheduler.tsx`)
-- Show scope label on each schedule card (e.g. "CS Dept • 2 batches" or "All")
+#### 2. Hooks
+- **`src/hooks/useAssets.ts`** — fetch all assets, add, update, delete via Supabase
+- **`src/hooks/useStaff.ts`** — fetch all support staff, add, update, delete via Supabase
 
-### 5. Hook (`useGenerateTimetable.ts`)
-- No changes needed — it already passes `scheduleId`, and the edge function will read scope from the schedule record itself
+#### 3. Form Dialogs
+- **`src/components/forms/AssetFormDialog.tsx`** — add/edit asset (name, code, type, location, status, assigned_to)
+- **`src/components/forms/StaffFormDialog.tsx`** — add/edit staff (name, email, department, role, shift, status)
+
+#### 4. Pages (replace stubs)
+- **`src/pages/Assets.tsx`** — table with filters (type, status), add/edit/delete buttons, stat cards
+- **`src/pages/Staff.tsx`** — table with filters (role, status, department), add/edit/delete, stat cards
 
 ## Files
 
 | File | Action |
 |------|--------|
-| Database migration | Add 2 columns to `schedules` |
-| `supabase/functions/generate-timetable/index.ts` | Filter assignments by scope |
-| `src/components/forms/ScheduleFormDialog.tsx` | Add Dept + Batch pickers |
-| `src/pages/Scheduler.tsx` | Show scope on cards |
+| Database migration | Create `assets` + `support_staff` tables with RLS |
+| `src/pages/Auth.tsx` | Add Eye/EyeOff password visibility toggle |
+| `src/hooks/useAssets.ts` | Create — CRUD hook |
+| `src/hooks/useStaff.ts` | Create — CRUD hook |
+| `src/components/forms/AssetFormDialog.tsx` | Create — form dialog |
+| `src/components/forms/StaffFormDialog.tsx` | Create — form dialog |
+| `src/pages/Assets.tsx` | Replace stub with full CRUD page |
+| `src/pages/Staff.tsx` | Replace stub with full CRUD page |
 
