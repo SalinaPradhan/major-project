@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSchedules, useDeleteSchedule } from '@/hooks/useSchedules';
+import { useSchedules, useDeleteSchedule, useUpdateSchedule } from '@/hooks/useSchedules';
 import { useGenerateTimetable } from '@/hooks/useGenerateTimetable';
 import { ScheduleFormDialog } from '@/components/forms/ScheduleFormDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Play, Trash2, Pencil, Cpu, Zap } from 'lucide-react';
+import { Plus, Play, Trash2, Pencil, Cpu, Zap, Globe, GlobeLock } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -20,6 +20,7 @@ const statusColors: Record<string, string> = {
 export default function Scheduler() {
   const { data: schedules = [], isLoading } = useSchedules();
   const deleteSchedule = useDeleteSchedule();
+  const updateSchedule = useUpdateSchedule();
   const { mutateAsync: generate, isPending, progress } = useGenerateTimetable();
   const [formOpen, setFormOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Tables<'schedules'> | null>(null);
@@ -44,6 +45,14 @@ export default function Scheduler() {
     if (!deleteId) return;
     try { await deleteSchedule.mutateAsync(deleteId); toast.success('Schedule deleted'); } catch (e: any) { toast.error(e.message); }
     setDeleteId(null);
+  };
+
+  const handleTogglePublish = async (schedule: Tables<'schedules'>) => {
+    const newStatus = schedule.status === 'published' ? 'draft' : 'published';
+    try {
+      await updateSchedule.mutateAsync({ id: schedule.id, status: newStatus });
+      toast.success(newStatus === 'published' ? 'Schedule published!' : 'Schedule unpublished');
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const progressPercent = progress
@@ -124,6 +133,11 @@ export default function Scheduler() {
                   <Button size="sm" variant="outline" onClick={() => handleGenerate(s)} disabled={isPending}>
                     <Play className="mr-1 h-3 w-3" />Generate
                   </Button>
+                  {s.fitness_score != null && (
+                    <Button size="sm" variant={s.status === 'published' ? 'default' : 'outline'} onClick={() => handleTogglePublish(s)} disabled={updateSchedule.isPending}>
+                      {s.status === 'published' ? <><GlobeLock className="mr-1 h-3 w-3" />Unpublish</> : <><Globe className="mr-1 h-3 w-3" />Publish</>}
+                    </Button>
+                  )}
                   <Button size="sm" variant="ghost" onClick={() => { setEditingSchedule(s); setFormOpen(true); }}><Pencil className="h-3 w-3" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => setDeleteId(s.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                 </div>
