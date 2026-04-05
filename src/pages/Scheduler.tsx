@@ -47,6 +47,14 @@ export default function Scheduler() {
     setDeleteId(null);
   };
 
+  const handleTogglePublish = async (schedule: Tables<'schedules'>) => {
+    const newStatus = schedule.status === 'published' ? 'draft' : 'published';
+    try {
+      await updateSchedule.mutateAsync({ id: schedule.id, status: newStatus });
+      toast.success(newStatus === 'published' ? 'Schedule published!' : 'Schedule unpublished');
+    } catch (e: any) { toast.error(e.message); }
+  };
+
   const progressPercent = progress
     ? progress.totalGenerations > 0
       ? Math.round((progress.currentGeneration / progress.totalGenerations) * 100)
