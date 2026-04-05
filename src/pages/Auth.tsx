@@ -16,7 +16,7 @@ const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 
-type SignupRole = 'student' | 'faculty' | 'admin';
+type SignupRole = 'student' | 'faculty';
 
 const STUDENT_EMAIL_PATTERN = /\.\d{4}[@.]/;
 
@@ -116,11 +116,7 @@ export default function Auth() {
       return;
     }
 
-    toast({ title: 'Account created!', description: 'Signing you in...' });
-    const { error: signInError } = await signIn(signupEmail, signupPassword);
-    if (signInError) {
-      toast({ title: 'Account created', description: 'Please sign in with your credentials.' });
-    }
+    toast({ title: 'Account created!', description: 'Please check your email to verify your account, then sign in.' });
     setIsSubmitting(false);
     setConfiguringRole(null);
   };
@@ -158,7 +154,6 @@ export default function Auth() {
   const roleOptions: { value: SignupRole; label: string; icon: React.ElementType; description: string }[] = [
     { value: 'student', label: 'Student', icon: GraduationCap, description: 'View schedules & events' },
     { value: 'faculty', label: 'Faculty', icon: Users, description: 'Manage classes & bookings' },
-    { value: 'admin', label: 'Admin', icon: Shield, description: 'Full system access' },
   ];
 
   return (

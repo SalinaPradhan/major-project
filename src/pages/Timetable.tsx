@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSchedules, useScheduleEntries } from '@/hooks/useSchedules';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +20,9 @@ const COLORS = [
 
 export default function Timetable() {
   const { data: schedules = [] } = useSchedules();
-  const published = schedules.filter((s) => s.status === 'published');
-  const allSchedules = schedules;
+  const { isStudent } = useAuth();
+  const published = useMemo(() => schedules.filter((s) => s.status === 'published'), [schedules]);
+  const allSchedules = isStudent ? published : schedules;
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');
 
   // Auto-select first published schedule on load
