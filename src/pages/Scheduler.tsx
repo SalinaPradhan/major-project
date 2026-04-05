@@ -133,6 +133,11 @@ export default function Scheduler() {
                   <Button size="sm" variant="outline" onClick={() => handleGenerate(s)} disabled={isPending}>
                     <Play className="mr-1 h-3 w-3" />Generate
                   </Button>
+                  {s.fitness_score != null && (
+                    <Button size="sm" variant={s.status === 'published' ? 'default' : 'outline'} onClick={() => handleTogglePublish(s)} disabled={updateSchedule.isPending}>
+                      {s.status === 'published' ? <><GlobeLock className="mr-1 h-3 w-3" />Unpublish</> : <><Globe className="mr-1 h-3 w-3" />Publish</>}
+                    </Button>
+                  )}
                   <Button size="sm" variant="ghost" onClick={() => { setEditingSchedule(s); setFormOpen(true); }}><Pencil className="h-3 w-3" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => setDeleteId(s.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                 </div>
