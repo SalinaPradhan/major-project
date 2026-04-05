@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, Loader2, Mail, Lock, User, ArrowLeft, GraduationCap, Users, Shield, Eye, EyeOff } from 'lucide-react';
+import { Brain, Loader2, Mail, Lock, User, ArrowLeft, GraduationCap, Users, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
@@ -75,8 +75,8 @@ export default function Auth() {
     if (signupPassword !== signupConfirmPassword) {
       newErrors.signupConfirmPassword = 'Passwords do not match';
     }
-    if ((selectedRole === 'admin' || selectedRole === 'faculty') && STUDENT_EMAIL_PATTERN.test(signupEmail)) {
-      newErrors.signupEmail = 'Staff roles require a non-student institutional email.';
+    if (selectedRole === 'faculty' && STUDENT_EMAIL_PATTERN.test(signupEmail)) {
+      newErrors.signupEmail = 'Faculty roles require a non-student institutional email.';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
