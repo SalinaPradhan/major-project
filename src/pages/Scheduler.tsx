@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSchedules, useDeleteSchedule } from '@/hooks/useSchedules';
+import { useSchedules, useDeleteSchedule, useUpdateSchedule } from '@/hooks/useSchedules';
 import { useGenerateTimetable } from '@/hooks/useGenerateTimetable';
 import { ScheduleFormDialog } from '@/components/forms/ScheduleFormDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
@@ -20,6 +20,7 @@ const statusColors: Record<string, string> = {
 export default function Scheduler() {
   const { data: schedules = [], isLoading } = useSchedules();
   const deleteSchedule = useDeleteSchedule();
+  const updateSchedule = useUpdateSchedule();
   const { mutateAsync: generate, isPending, progress } = useGenerateTimetable();
   const [formOpen, setFormOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Tables<'schedules'> | null>(null);
