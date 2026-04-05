@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSchedules, useScheduleEntries } from '@/hooks/useSchedules';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +22,13 @@ export default function Timetable() {
   const published = schedules.filter((s) => s.status === 'published');
   const allSchedules = schedules;
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');
+
+  // Auto-select first published schedule on load
+  useEffect(() => {
+    if (!selectedScheduleId && published.length > 0) {
+      setSelectedScheduleId(published[0].id);
+    }
+  }, [published, selectedScheduleId]);
   const { data: entries = [] } = useScheduleEntries(selectedScheduleId || null);
 
   // Build a color map for courses
