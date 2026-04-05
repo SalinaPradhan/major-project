@@ -16,17 +16,14 @@ export default function Settings() {
       <div className="grid gap-6 max-w-2xl">
         <Card className="glass-card">
           <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Bell className="h-4 w-4" /> Notifications</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between"><Label htmlFor="email-notif">Email notifications</Label><Switch id="email-notif" /></div>
-            <div className="flex items-center justify-between"><Label htmlFor="conflict-alerts">Conflict alerts</Label><Switch id="conflict-alerts" defaultChecked /></div>
-            <div className="flex items-center justify-between"><Label htmlFor="swap-notif">Swap request notifications</Label><Switch id="swap-notif" defaultChecked /></div>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Notification preferences coming soon.</p>
           </CardContent>
         </Card>
         <Card className="glass-card">
           <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Palette className="h-4 w-4" /> Appearance</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between"><Label htmlFor="dark-mode">Dark mode</Label><Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={toggleTheme} /></div>
-            <div className="flex items-center justify-between"><Label htmlFor="compact">Compact view</Label><Switch id="compact" /></div>
           </CardContent>
         </Card>
         <Card className="glass-card">

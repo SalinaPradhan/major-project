@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import type { Tables } from "@/integrations/supabase/types";
 
 type Department = Tables<"departments">;
@@ -16,6 +17,7 @@ export default function Departments() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
 
@@ -120,7 +122,7 @@ export default function Departments() {
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(d)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -128,6 +130,15 @@ export default function Departments() {
           </TableBody>
         </Table>
       )}
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }}
+        title="Delete Department"
+        description="This will permanently delete this department. Related records may be affected."
+        isPending={remove.isPending}
+      />
     </div>
   );
 }
