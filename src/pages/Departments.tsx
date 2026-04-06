@@ -32,6 +32,8 @@ export default function Departments() {
     },
   });
 
+  const { paginatedData, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: departments });
+
   const upsert = useMutation({
     mutationFn: async () => {
       if (editing) {
