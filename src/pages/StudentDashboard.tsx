@@ -1,3 +1,4 @@
+import { getGreeting } from '@/lib/greeting';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchedules, useScheduleEntries } from '@/hooks/useSchedules';
 import { useQuery } from '@tanstack/react-query';

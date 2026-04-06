@@ -1,3 +1,4 @@
+import { getGreeting } from '@/lib/greeting';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFacultyByEmail } from '@/hooks/useFaculty';
 import { useSchedules, useScheduleEntries } from '@/hooks/useSchedules';
