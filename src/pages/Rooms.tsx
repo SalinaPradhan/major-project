@@ -85,63 +85,65 @@ export default function Rooms() {
       {isLoading ? (
         <p className="text-muted-foreground">Loading rooms...</p>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Building</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Projector</TableHead>
-                {isAdminOrAbove && <TableHead className="w-32">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedData.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={typeColors[r.room_type] || ''}>
-                      {r.room_type.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{r.capacity}</TableCell>
-                  <TableCell>{r.building ?? '—'}</TableCell>
-                  <TableCell>{r.floor ?? '—'}</TableCell>
-                  <TableCell>{r.has_projector ? '✓' : '—'}</TableCell>
-                  {isAdminOrAbove && (
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {isPremierVenueType(r.room_type) && (
-                          <Button variant="ghost" size="icon" title="Book Venue"
-                            onClick={() => navigate(`/venue-management?venue=${r.id}`)}>
-                            <CalendarDays className="h-4 w-4 text-primary" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(r)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-              {paginatedData.length === 0 && (
+        <>
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    No rooms found
-                  </TableCell>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Capacity</TableHead>
+                  <TableHead>Building</TableHead>
+                  <TableHead>Floor</TableHead>
+                  <TableHead>Projector</TableHead>
+                  {isAdminOrAbove && <TableHead className="w-32">Actions</TableHead>}
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
+              </TableHeader>
+              <TableBody>
+                {paginatedData.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={typeColors[r.room_type] || ''}>
+                        {r.room_type.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{r.capacity}</TableCell>
+                    <TableCell>{r.building ?? '—'}</TableCell>
+                    <TableCell>{r.floor ?? '—'}</TableCell>
+                    <TableCell>{r.has_projector ? '✓' : '—'}</TableCell>
+                    {isAdminOrAbove && (
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {isPremierVenueType(r.room_type) && (
+                            <Button variant="ghost" size="icon" title="Book Venue"
+                              onClick={() => navigate(`/venue-management?venue=${r.id}`)}>
+                              <CalendarDays className="h-4 w-4 text-primary" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(r)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {paginatedData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      No rooms found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
+        </>
       )}
 
       <RoomFormDialog
