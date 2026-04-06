@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useBatches, useDeleteBatch, useCreateBatch, useUpdateBatch } from '@/hooks/useBatches';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { PaginationControls } from '@/components/shared/PaginationControls';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +36,8 @@ export default function Batches() {
   const [departmentId, setDepartmentId] = useState('');
 
   const filtered = batches.filter((b: any) => b.name.toLowerCase().includes(search.toLowerCase()));
+
+  const { paginatedData, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filtered });
 
   const openAdd = () => {
     setEditing(null); setName(''); setSemester('1'); setSection('A'); setStrength('30'); setDepartmentId('');
@@ -81,42 +85,45 @@ export default function Batches() {
       {isLoading ? (
         <p className="text-muted-foreground">Loading batches...</p>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Semester</TableHead>
-                <TableHead>Section</TableHead>
-                <TableHead>Strength</TableHead>
-                {isAdminOrAbove && <TableHead className="w-24">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((b: any) => (
-                <TableRow key={b.id}>
-                  <TableCell className="font-medium">{b.name}</TableCell>
-                  <TableCell>{b.departments?.name ?? '—'}</TableCell>
-                  <TableCell>{b.semester}</TableCell>
-                  <TableCell>{b.section}</TableCell>
-                  <TableCell>{b.strength}</TableCell>
-                  {isAdminOrAbove && (
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(b)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(b.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </div>
-                    </TableCell>
-                  )}
+        <>
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Semester</TableHead>
+                  <TableHead>Section</TableHead>
+                  <TableHead>Strength</TableHead>
+                  {isAdminOrAbove && <TableHead className="w-24">Actions</TableHead>}
                 </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No batches found</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {paginatedData.map((b: any) => (
+                  <TableRow key={b.id}>
+                    <TableCell className="font-medium">{b.name}</TableCell>
+                    <TableCell>{b.departments?.name ?? '—'}</TableCell>
+                    <TableCell>{b.semester}</TableCell>
+                    <TableCell>{b.section}</TableCell>
+                    <TableCell>{b.strength}</TableCell>
+                    {isAdminOrAbove && (
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(b)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(b.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {paginatedData.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No batches found</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
+        </>
       )}
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>

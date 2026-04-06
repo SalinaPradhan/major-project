@@ -1,3 +1,4 @@
+import { getGreeting } from '@/lib/greeting';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchedules, useScheduleEntries } from '@/hooks/useSchedules';
 import { useQuery } from '@tanstack/react-query';
@@ -138,7 +139,7 @@ export default function StudentDashboard() {
             {initials}
           </div>
           <div>
-            <h1 className="text-base font-semibold text-foreground">Good morning, {displayName}</h1>
+            <h1 className="text-base font-semibold text-foreground">{getGreeting()}, {displayName}</h1>
             <p className="text-[11px] text-muted-foreground">
               {batchLabel && `${batchLabel} · `}{todayStr}
             </p>

@@ -17,7 +17,7 @@ export function Header({ title, subtitle }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+    <header className="h-16 border-b border-border flex items-center justify-between px-6 pl-14 md:pl-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
       <div>
         <h1 className="text-lg font-semibold text-foreground">{title}</h1>
         {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}

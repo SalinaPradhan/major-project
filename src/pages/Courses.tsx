@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useCourses, useDeleteCourse, useCreateCourse, useUpdateCourse } from '@/hooks/useCourses';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { PaginationControls } from '@/components/shared/PaginationControls';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +43,8 @@ export default function Courses() {
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.code.toLowerCase().includes(search.toLowerCase())
   );
+
+  const { paginatedData, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filtered });
 
   const openAdd = () => {
     setEditing(null);
@@ -105,44 +109,47 @@ export default function Courses() {
       {isLoading ? (
         <p className="text-muted-foreground">Loading courses...</p>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Credits</TableHead>
-                <TableHead>Lecture</TableHead>
-                <TableHead>Lab</TableHead>
-                {isAdminOrAbove && <TableHead className="w-24">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((c: any) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono text-sm">{c.code}</TableCell>
-                  <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell>{c.departments?.name ?? '—'}</TableCell>
-                  <TableCell>{c.credit_hours}</TableCell>
-                  <TableCell>{c.lecture_hours}</TableCell>
-                  <TableCell>{c.lab_hours}{c.requires_lab && <Badge variant="outline" className="ml-2 text-xs">Lab</Badge>}</TableCell>
-                  {isAdminOrAbove && (
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </div>
-                    </TableCell>
-                  )}
+        <>
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Credits</TableHead>
+                  <TableHead>Lecture</TableHead>
+                  <TableHead>Lab</TableHead>
+                  {isAdminOrAbove && <TableHead className="w-24">Actions</TableHead>}
                 </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No courses found</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {paginatedData.map((c: any) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-mono text-sm">{c.code}</TableCell>
+                    <TableCell className="font-medium">{c.name}</TableCell>
+                    <TableCell>{c.departments?.name ?? '—'}</TableCell>
+                    <TableCell>{c.credit_hours}</TableCell>
+                    <TableCell>{c.lecture_hours}</TableCell>
+                    <TableCell>{c.lab_hours}{c.requires_lab && <Badge variant="outline" className="ml-2 text-xs">Lab</Badge>}</TableCell>
+                    {isAdminOrAbove && (
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {paginatedData.length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No courses found</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
+        </>
       )}
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
