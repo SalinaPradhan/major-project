@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useFaculty, useDeleteFaculty } from '@/hooks/useFaculty';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { PaginationControls } from '@/components/shared/PaginationControls';
 import { FacultyFormDialog } from '@/components/forms/FacultyFormDialog';
 import { FacultyAvailabilityDialog } from '@/components/forms/FacultyAvailabilityDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
@@ -26,6 +28,8 @@ export default function Faculty() {
     f.name.toLowerCase().includes(search.toLowerCase()) ||
     (f.email || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const { paginatedData, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filtered });
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -61,51 +65,54 @@ export default function Faculty() {
       {isLoading ? (
         <p className="text-muted-foreground">Loading faculty...</p>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Max Hrs/Day</TableHead>
-                <TableHead>Max Hrs/Week</TableHead>
-                {isAdminOrAbove && <TableHead className="w-32">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((f: any) => (
-                <TableRow key={f.id}>
-                  <TableCell className="font-medium">{f.name}</TableCell>
-                  <TableCell>{f.email ?? '—'}</TableCell>
-                  <TableCell>{f.departments?.name ?? '—'}</TableCell>
-                  <TableCell>{f.max_hours_per_day}</TableCell>
-                  <TableCell>{f.max_hours_per_week}</TableCell>
-                  {isAdminOrAbove && (
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setAvailabilityFaculty({ id: f.id, name: f.name })}>
-                          <Clock className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => { setEditingFaculty(f); setFormOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
+        <>
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No faculty found</TableCell>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Max Hrs/Day</TableHead>
+                  <TableHead>Max Hrs/Week</TableHead>
+                  {isAdminOrAbove && <TableHead className="w-32">Actions</TableHead>}
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {paginatedData.map((f: any) => (
+                  <TableRow key={f.id}>
+                    <TableCell className="font-medium">{f.name}</TableCell>
+                    <TableCell>{f.email ?? '—'}</TableCell>
+                    <TableCell>{f.departments?.name ?? '—'}</TableCell>
+                    <TableCell>{f.max_hours_per_day}</TableCell>
+                    <TableCell>{f.max_hours_per_week}</TableCell>
+                    {isAdminOrAbove && (
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => setAvailabilityFaculty({ id: f.id, name: f.name })}>
+                            <Clock className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => { setEditingFaculty(f); setFormOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {paginatedData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No faculty found</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
+        </>
       )}
 
       <FacultyFormDialog open={formOpen} onOpenChange={setFormOpen} faculty={editingFaculty} />
