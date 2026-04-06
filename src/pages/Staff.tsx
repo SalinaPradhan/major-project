@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from '@/hooks/useStaff';
 import { useResourceFilters } from '@/hooks/useResourceFilters';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { PaginationControls } from '@/components/shared/PaginationControls';
 import { StaffFormDialog, StaffFormValues } from '@/components/forms/StaffFormDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -142,6 +144,8 @@ export default function Staff() {
     );
   }
 
+  const { paginatedData: paginatedStaff, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filteredData });
+
   const all = staff ?? [];
 
   return (
@@ -190,7 +194,10 @@ export default function Staff() {
       ) : filteredData.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">No staff match your filters.</div>
       ) : (
-        <ResourceTable data={filteredData} columns={columns} />
+        <>
+          <ResourceTable data={paginatedStaff} columns={columns} />
+          <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
+        </>
       )}
 
       <StaffFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} staff={selectedStaff} isSubmitting={createStaff.isPending || updateStaff.isPending} />

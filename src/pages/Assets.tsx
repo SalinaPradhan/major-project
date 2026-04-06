@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAssets, useCreateAsset, useUpdateAsset, useDeleteAsset } from '@/hooks/useAssets';
 import { useResourceFilters } from '@/hooks/useResourceFilters';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { PaginationControls } from '@/components/shared/PaginationControls';
 import { AssetFormDialog, AssetFormValues } from '@/components/forms/AssetFormDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -156,6 +158,8 @@ export default function Assets() {
     );
   }
 
+  const { paginatedData: paginatedAssets, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filteredData });
+
   const all = assets ?? [];
 
   return (
@@ -204,7 +208,10 @@ export default function Assets() {
       ) : filteredData.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">No assets match your filters.</div>
       ) : (
-        <ResourceTable data={filteredData} columns={columns} />
+        <>
+          <ResourceTable data={paginatedAssets} columns={columns} />
+          <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
+        </>
       )}
 
       <AssetFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} asset={selectedAsset} isSubmitting={createAsset.isPending || updateAsset.isPending} />
