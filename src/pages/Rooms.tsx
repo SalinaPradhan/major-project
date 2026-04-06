@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useRooms, useDeleteRoom } from '@/hooks/useRooms';
 import { useAuth } from '@/contexts/AuthContext';
 import { isPremierVenueType } from '@/hooks/usePremierVenues';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { PaginationControls } from '@/components/shared/PaginationControls';
 import { RoomFormDialog } from '@/components/forms/RoomFormDialog';
 import { DeleteConfirmDialog } from '@/components/forms/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,8 @@ export default function Rooms() {
     r.name.toLowerCase().includes(search.toLowerCase()) ||
     (r.building || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const { paginatedData, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filtered });
 
   const handleEdit = (room: Tables<'rooms'>) => {
     setEditingRoom(room);
@@ -95,7 +99,7 @@ export default function Rooms() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((r) => (
+              {paginatedData.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.name}</TableCell>
                   <TableCell>
@@ -127,7 +131,7 @@ export default function Rooms() {
                   )}
                 </TableRow>
               ))}
-              {filtered.length === 0 && (
+              {paginatedData.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No rooms found
@@ -137,6 +141,7 @@ export default function Rooms() {
             </TableBody>
           </Table>
         </div>
+        <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} nextPage={nextPage} prevPage={prevPage} goToPage={goToPage} />
       )}
 
       <RoomFormDialog

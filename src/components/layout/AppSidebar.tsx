@@ -14,16 +14,18 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
-  ClipboardList
+  ClipboardList,
+  Menu
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
-export function AppSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const location = useLocation();
   const { isAdminOrAbove, isFaculty, isStudent, role } = useAuth();
 
@@ -32,26 +34,19 @@ export function AppSidebar() {
       { name: 'Dashboard', href: '/', icon: LayoutDashboard },
       { name: 'Timetable', href: '/timetable', icon: Calendar },
     ];
-
     if (isAdminOrAbove) {
-      const items = [
+      return [
         ...baseItems,
         { name: 'Rooms', href: '/rooms', icon: DoorOpen },
         { name: 'Faculty', href: '/faculty', icon: Users },
         { name: 'Courses', href: '/courses', icon: BookOpen },
         { name: 'Batches', href: '/batches', icon: GraduationCap },
         { name: 'Assignments', href: '/teaching-assignments', icon: ClipboardList },
-      ];
-
-      items.push(
         { name: 'Support Staff', href: '/staff', icon: UserCog },
         { name: 'Assets', href: '/assets', icon: Package },
         { name: 'Venue Mgmt', href: '/venue-management', icon: CalendarDays },
-      );
-
-      return items;
+      ];
     }
-
     if (isFaculty) {
       return [
         ...baseItems,
@@ -61,7 +56,6 @@ export function AppSidebar() {
         { name: 'Venue Mgmt', href: '/venue-management', icon: CalendarDays },
       ];
     }
-
     if (isStudent) {
       return [
         ...baseItems,
@@ -69,23 +63,14 @@ export function AppSidebar() {
         { name: 'Venue Mgmt', href: '/venue-management', icon: CalendarDays },
       ];
     }
-
     return baseItems;
   };
 
   const getSecondaryNavigation = () => {
     const items: { name: string; href: string; icon: typeof Brain }[] = [];
-
-    if (isAdminOrAbove) {
-      items.push({ name: 'AI Scheduler', href: '/scheduler', icon: Brain });
-    }
-
+    if (isAdminOrAbove) items.push({ name: 'AI Scheduler', href: '/scheduler', icon: Brain });
     items.push({ name: 'Alerts', href: '/alerts', icon: Bell });
-
-    if (isAdminOrAbove) {
-      items.push({ name: 'Settings', href: '/settings', icon: Settings });
-    }
-
+    if (isAdminOrAbove) items.push({ name: 'Settings', href: '/settings', icon: Settings });
     return items;
   };
 
@@ -98,13 +83,7 @@ export function AppSidebar() {
   };
 
   return (
-    <aside
-      className={cn(
-        "flex flex-col border-r border-border bg-sidebar h-screen sticky top-0 transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
-      {/* Logo */}
+    <>
       <div className="flex items-center gap-2 px-4 h-16 border-b border-border">
         <Brain className="h-7 w-7 text-primary shrink-0" />
         {!collapsed && (
@@ -115,7 +94,6 @@ export function AppSidebar() {
         )}
       </div>
 
-      {/* Main nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
@@ -123,6 +101,7 @@ export function AppSidebar() {
             <NavLink
               key={item.name}
               to={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                 isActive
@@ -136,7 +115,6 @@ export function AppSidebar() {
           );
         })}
 
-        {/* Divider */}
         <div className="my-4 border-t border-border" />
 
         {secondaryNavigation.map((item) => {
@@ -145,6 +123,7 @@ export function AppSidebar() {
             <NavLink
               key={item.name}
               to={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                 isActive
@@ -159,11 +138,52 @@ export function AppSidebar() {
         })}
       </nav>
 
-      {/* Role badge + collapse toggle */}
-      <div className="border-t border-border p-3 flex items-center justify-between">
+      <div className="border-t border-border p-3">
         {!collapsed && (
           <span className="text-xs text-muted-foreground capitalize">{getRoleLabel()}</span>
         )}
+      </div>
+    </>
+  );
+}
+
+export function AppSidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  const isMobile = useIsMobile();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-3 left-3 z-50 md:hidden h-10 w-10 bg-card/80 backdrop-blur-sm border border-border shadow-sm"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent side="left" className="p-0 w-64">
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <div className="flex flex-col h-full">
+              <SidebarNav collapsed={false} onNavigate={() => setMobileOpen(false)} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  return (
+    <aside
+      className={cn(
+        "flex flex-col border-r border-border bg-sidebar h-screen sticky top-0 transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
+      <SidebarNav collapsed={collapsed} />
+      <div className="border-t border-border p-3 flex items-center justify-end">
         <Button
           variant="ghost"
           size="icon"
