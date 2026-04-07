@@ -9,7 +9,10 @@ import { AnnouncementsPanel } from '@/components/dashboard/AnnouncementsPanel';
 import { WeeklyGrid, type GridCell } from '@/components/dashboard/WeeklyGrid';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ExternalLink, FileDown, BookOpen, Clock, CalendarDays, Bell } from 'lucide-react';
+import { ExternalLink, FileDown, CalendarSync } from 'lucide-react';
+import { downloadICalFile, type ICalEntry } from '@/lib/icalExport';
+import { exportTimetablePdf } from '@/lib/pdfExport';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useMemo, useEffect, useState } from 'react';
 
@@ -151,8 +154,45 @@ export default function StudentDashboard() {
               Full timetable <ExternalLink className="h-3 w-3" />
             </Button>
           </Link>
-          <Button variant="outline" size="sm" className="gap-1 text-xs" disabled>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 text-xs"
+            disabled={batchEntries.length === 0}
+            onClick={() => {
+              exportTimetablePdf({
+                title: `Timetable — ${displayName}`,
+                subtitle: batchLabel || undefined,
+                grid: weeklyGrid,
+                timeSlots: gridSlots,
+                days: DAYS,
+                fileName: `timetable-${displayName.replace(/\s+/g, '_')}.pdf`,
+              });
+              toast.success('PDF downloaded');
+            }}
+          >
             Export PDF <FileDown className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 text-xs"
+            disabled={batchEntries.length === 0}
+            onClick={() => {
+              const icalEntries: ICalEntry[] = batchEntries.map((e: any) => ({
+                courseName: e.teaching_assignment?.course?.name ?? 'Class',
+                roomName: e.room?.name ?? '',
+                instructorName: e.teaching_assignment?.faculty?.name,
+                day: e.day,
+                startTime: e.time_slot?.start_time?.slice(0, 5) ?? '09:00',
+                endTime: e.time_slot?.end_time?.slice(0, 5) ?? '10:00',
+                isLab: e.teaching_assignment?.is_lab ?? false,
+              }));
+              downloadICalFile(icalEntries, `timetable-${displayName.replace(/\s+/g, '_')}.ics`, `${displayName} Timetable`);
+              toast.success('Calendar file downloaded');
+            }}
+          >
+            Sync Calendar <CalendarSync className="h-3 w-3" />
           </Button>
         </div>
       </div>

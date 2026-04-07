@@ -13,7 +13,10 @@ import { WeeklyGrid, type GridCell } from '@/components/dashboard/WeeklyGrid';
 import { AvailabilityGrid } from '@/components/dashboard/AvailabilityGrid';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, FileDown, CalendarSync } from 'lucide-react';
+import { downloadICalFile, type ICalEntry } from '@/lib/icalExport';
+import { exportTimetablePdf } from '@/lib/pdfExport';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
 
@@ -141,11 +144,52 @@ export default function FacultyDashboard() {
             </p>
           </div>
         </div>
-        <Link to="/timetable">
-          <Button variant="outline" size="sm" className="gap-1 text-xs">
-            My timetable <ExternalLink className="h-3 w-3" />
+        <div className="flex items-center gap-2">
+          <Link to="/timetable">
+            <Button variant="outline" size="sm" className="gap-1 text-xs">
+              My timetable <ExternalLink className="h-3 w-3" />
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 text-xs"
+            disabled={facultyEntries.length === 0}
+            onClick={() => {
+              exportTimetablePdf({
+                title: `Timetable — ${displayName}`,
+                subtitle: deptName || undefined,
+                grid: weeklyGrid,
+                timeSlots: gridSlots,
+                days: DAYS,
+                fileName: `timetable-${displayName.replace(/\s+/g, '_')}.pdf`,
+              });
+              toast.success('PDF downloaded');
+            }}
+          >
+            Export PDF <FileDown className="h-3 w-3" />
           </Button>
-        </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 text-xs"
+            disabled={facultyEntries.length === 0}
+            onClick={() => {
+              const icalEntries: ICalEntry[] = facultyEntries.map((e: any) => ({
+                courseName: e.teaching_assignment?.course?.name ?? 'Class',
+                roomName: e.room?.name ?? '',
+                day: e.day,
+                startTime: e.time_slot?.start_time?.slice(0, 5) ?? '09:00',
+                endTime: e.time_slot?.end_time?.slice(0, 5) ?? '10:00',
+                isLab: e.teaching_assignment?.is_lab ?? false,
+              }));
+              downloadICalFile(icalEntries, `timetable-${displayName.replace(/\s+/g, '_')}.ics`, `${displayName} Timetable`);
+              toast.success('Calendar file downloaded');
+            }}
+          >
+            Sync Calendar <CalendarSync className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
 
       {/* Metrics */}
