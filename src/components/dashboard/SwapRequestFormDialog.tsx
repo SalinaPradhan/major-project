@@ -23,6 +23,7 @@ export function SwapRequestFormDialog({ open, onOpenChange, facultyId, requester
   const [fromSlotId, setFromSlotId] = useState('');
   const [toDay, setToDay] = useState('');
   const [toSlotId, setToSlotId] = useState('');
+  const [targetFacultyId, setTargetFacultyId] = useState('');
   const [reason, setReason] = useState('');
 
   const createSwap = useCreateSwapRequest();
@@ -40,18 +41,40 @@ export function SwapRequestFormDialog({ open, onOpenChange, facultyId, requester
     },
   });
 
+  const { data: facultyList = [] } = useQuery({
+    queryKey: ['faculty_list_for_swap', facultyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('faculty')
+        .select('id, name')
+        .neq('id', facultyId)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleSubmit = () => {
     if (!fromDay || !fromSlotId || !toDay || !toSlotId) {
       toast.error('Please select all day and slot fields');
       return;
     }
     createSwap.mutate(
-      { facultyId, requesterName, fromDay, fromSlotId, toDay, toSlotId, reason },
+      {
+        facultyId,
+        requesterName,
+        fromDay,
+        fromSlotId,
+        toDay,
+        toSlotId,
+        reason,
+        ...(targetFacultyId ? { targetFacultyId } : {}),
+      },
       {
         onSuccess: () => {
           toast.success('Swap request submitted');
           onOpenChange(false);
-          setFromDay(''); setFromSlotId(''); setToDay(''); setToSlotId(''); setReason('');
+          setFromDay(''); setFromSlotId(''); setToDay(''); setToSlotId(''); setReason(''); setTargetFacultyId('');
         },
         onError: (err) => toast.error(err.message),
       }
@@ -65,6 +88,20 @@ export function SwapRequestFormDialog({ open, onOpenChange, facultyId, requester
           <DialogTitle>New Swap Request</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Target faculty */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Swap With (optional)</Label>
+            <Select value={targetFacultyId} onValueChange={setTargetFacultyId}>
+              <SelectTrigger><SelectValue placeholder="Any / Select faculty" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Any (admin will assign)</SelectItem>
+                {facultyList.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">From Day</Label>
