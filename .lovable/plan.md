@@ -1,124 +1,84 @@
 
 
-# Production Readiness Evaluation — TROS
+# Feature #6: Student/Faculty Tools
 
-## Evaluation Summary
+Three sub-features: (A) iCal/.ics export, (B) PDF timetable export, (C) Enhanced swap request workflow with peer notifications.
 
-As a senior engineer reviewing this project before hosting, here is a comprehensive audit across security, reliability, UX, data integrity, and code quality.
+## What Already Exists
+- Swap requests: full CRUD with `swap_requests` table, `FacultySwapPanel`, `SwapRequestFormDialog` -- faculty can create/cancel swaps
+- Student dashboard: has a disabled "Export PDF" button, weekly grid, today's schedule
+- Faculty dashboard: has swap panel, schedule timeline, workload card
+- Schedule entries are fully queryable with room/course/faculty/batch joins
 
----
+## Implementation Plan
 
-## CRITICAL Issues (Must Fix Before Hosting)
+### A. iCal/.ics Calendar Export (Student + Faculty Dashboards)
 
-### 1. Security: Anyone Can Register as Admin
-**Auth.tsx line 99-110** — The signup form sends the selected role (`admin`, `faculty`, `student`) as user metadata. The `handle_new_user` trigger only blocks admin if one already exists. This means:
-- The very first user to sign up as "admin" gets full admin access — including strangers.
-- After that, subsequent "admin" signups become "viewer", but the first-admin gate is a race condition.
+**New file: `src/lib/icalExport.ts`**
+- Utility function that takes an array of schedule entries and generates a valid `.ics` file string
+- Each class becomes a `VEVENT` with `DTSTART`, `DTEND`, `SUMMARY` (course name), `LOCATION` (room), `DESCRIPTION` (faculty name)
+- Map day-of-week to next occurrence dates for recurring weekly events using `RRULE:FREQ=WEEKLY`
+- Trigger browser download of the `.ics` file
 
-**Fix:** Remove the admin role option from the public signup form entirely. Admin accounts should only be created via invite or a seeded super-admin. At minimum, add an admin approval workflow.
+**Update `StudentDashboard.tsx`**:
+- Add "Sync Calendar" button next to the disabled PDF button
+- On click, generate .ics from the student's published schedule entries (filtered by batch)
 
-### 2. Security: Signup Immediately Signs In (Bypasses Email Verification)
-**Auth.tsx line 120** — After `signUp`, the code immediately calls `signIn(signupEmail, signupPassword)`. If auto-confirm is disabled (which it should be), this will fail silently. If auto-confirm is enabled, anyone can create accounts without email verification.
+**Update `FacultyDashboard.tsx`**:
+- Add "Sync Calendar" button
+- Generate .ics from the faculty's schedule entries
 
-**Fix:** After signup, show a "check your email" message. Do not auto-sign-in.
+### B. PDF Timetable Export (Enable the Disabled Button)
 
-### 3. Security: No Delete Confirmation on Destructive Actions
-**Departments.tsx line 124** — Delete is called directly on button click with no confirmation dialog. Same pattern exists in other CRUD pages. A misclick permanently deletes data.
+**New file: `src/lib/pdfExport.ts`**
+- Install `jspdf` + `jspdf-autotable` (already mentioned in project knowledge as planned)
+- Build a weekly timetable table (days x time slots) and render as PDF
+- Include header with student/faculty name, batch, semester info
 
-**Fix:** Wrap all delete actions in `DeleteConfirmDialog` (which already exists in the project).
+**Update `StudentDashboard.tsx`**:
+- Enable the "Export PDF" button, wire it to the PDF generator
+- Pass the weekly grid data to generate the timetable PDF
 
-### 4. Settings Page is Non-Functional
-**Settings.tsx** — All switches (email notifications, conflict alerts, compact view) are UI-only. They don't persist any state — toggling them does nothing. This will confuse users.
+**Update `FacultyDashboard.tsx`**:
+- Add "Export PDF" button with same logic
 
-**Fix:** Either connect to a `user_preferences` table or remove the non-functional toggles.
+### C. Enhanced Swap Request Workflow
 
----
+**Database migration**: Add `target_faculty_id` column to `swap_requests` table to support peer-to-peer swaps (faculty A requests to swap a slot with faculty B).
 
-## HIGH Priority Issues
+**Update `SwapRequestFormDialog.tsx`**:
+- Add a "Swap With" faculty dropdown so requesters can target a specific peer
+- Show the target faculty's schedule for the requested day/slot
 
-### 5. Dashboard Stats are Incomplete
-**useDashboardStats.ts** — `totalStaff`, `assignedStaff`, `totalAssets`, `workingAssets`, and `conflicts` are all hardcoded to `0`. Now that assets and support_staff tables exist, these should query real data.
+**Update `FacultySwapPanel.tsx`**:
+- Show "Incoming" vs "Outgoing" tabs
+- Incoming: swaps where `target_faculty_id` matches current faculty -- show Approve/Reject buttons
+- Outgoing: swaps created by current faculty -- show Cancel button
 
-### 6. No Foreign Keys in Database
-None of the tables have foreign key constraints. This means:
-- `batches.department_id` can reference a non-existent department
-- `schedule_entries.room_id` can point to a deleted room
-- `teaching_assignments.faculty_id` can reference deleted faculty
+**Update `useSwapRequests.ts`**:
+- Add query for incoming swap requests (`target_faculty_id = current faculty`)
+- Add approve/reject mutations
 
-This is a **data integrity risk** in production. Orphaned references will cause silent UI bugs.
+**System alert on swap approval**:
+- When a swap is approved, insert a `system_alerts` row notifying both parties
 
-### 7. No Loading/Error States on Several Pages
-**Departments.tsx** — No error state if the query fails. Just shows "Loading..." forever.
-**Profile.tsx** — Uses raw `useEffect` + `supabase` call instead of React Query, no loading skeleton, no error handling.
+## File Changes Summary
 
-### 8. Timetable Page Shows All Schedules (Including Drafts) to All Roles
-**Timetable.tsx line 68-80** — The schedule selector dropdown shows ALL schedules (draft, published, archived) to every user including students. Students should only see published schedules.
+| File | Action |
+|------|--------|
+| `src/lib/icalExport.ts` | Create -- .ics generation utility |
+| `src/lib/pdfExport.ts` | Create -- PDF timetable generator |
+| `src/pages/StudentDashboard.tsx` | Edit -- enable PDF, add iCal button |
+| `src/pages/FacultyDashboard.tsx` | Edit -- add PDF + iCal buttons |
+| `src/components/dashboard/FacultySwapPanel.tsx` | Edit -- incoming/outgoing tabs |
+| `src/components/dashboard/SwapRequestFormDialog.tsx` | Edit -- add target faculty picker |
+| `src/hooks/useSwapRequests.ts` | Edit -- add incoming query, target_faculty support |
+| DB migration | Add `target_faculty_id` to `swap_requests` |
+| `package.json` | Add `jspdf` + `jspdf-autotable` |
 
-### 9. Edge Function Has No Auth Check
-**generate-timetable/index.ts** — Uses `SUPABASE_SERVICE_ROLE_KEY` but never validates the calling user's JWT or role. Any authenticated user (including students) could invoke the generation endpoint if they know the URL.
-
-### 10. `viewer` Role Has No Route Access
-The `handle_new_user` function assigns `viewer` role to users who pick admin (when one already exists) or provide no role. But the app has no UI or routes for `viewer` — these users hit "Access Denied" on most pages and see an empty dashboard.
-
----
-
-## MEDIUM Priority Issues
-
-### 11. No Pagination on Any List Page
-All CRUD pages (Departments, Rooms, Faculty, Courses, Batches, Assets, Staff) fetch all rows at once. With growth, this will cause performance issues. The project has a `usePaginatedQuery` hook that isn't used anywhere.
-
-### 12. No Mobile Responsiveness for Sidebar
-**AppSidebar.tsx** — The sidebar is a fixed `w-64` column with no mobile hamburger menu. On mobile viewports, it will squeeze the main content area.
-
-### 13. Stale `useEffect` for Auto-Select on Timetable
-**Timetable.tsx line 27-31** — The `useEffect` depends on `published` array reference, which changes on every render since it's created inline with `.filter()`. This could cause unnecessary re-renders.
-
-### 14. Hardcoded "Good Morning" Greeting
-**StudentDashboard.tsx line 141, FacultyDashboard.tsx line 141** — Always says "Good morning" regardless of time of day.
-
-### 15. No Rate Limiting on Timetable Generation
-The edge function has a mutex check for concurrent runs on the same schedule, but a user can still spam-generate across different schedules, consuming server resources.
-
----
-
-## LOW Priority / Polish
-
-### 16. Inconsistent Toast Libraries
-Some pages use `toast` from `sonner`, others use `useToast` from `@/hooks/use-toast`. Should standardize on one.
-
-### 17. Type Safety
-Heavy use of `any` casts throughout (e.g., `(s as any).departments?.name` in Scheduler.tsx, `profile as any` in StudentDashboard). These hide potential runtime errors.
-
-### 18. No 404 Handling for Invalid Schedule/Entity IDs
-If a user bookmarks a URL with an entity ID that gets deleted, there's no graceful handling.
-
-### 19. PDF Export Button is Disabled
-**StudentDashboard.tsx line 153** — "Export PDF" button exists but is permanently disabled with no tooltip explaining why.
-
----
-
-## Recommended Fix Priority for Hosting
-
-| Priority | Issue | Effort |
-|----------|-------|--------|
-| **P0** | Remove admin from public signup | Small |
-| **P0** | Don't auto-sign-in after signup | Small |
-| **P0** | Add delete confirmations on all CRUD pages | Small |
-| **P1** | Filter timetable dropdown by role (students see published only) | Small |
-| **P1** | Fix dashboard stats to query real data | Small |
-| **P1** | Add foreign key constraints via migration | Medium |
-| **P1** | Add auth check to edge function | Small |
-| **P1** | Remove or implement Settings toggles | Small |
-| **P2** | Add mobile sidebar responsiveness | Medium |
-| **P2** | Use `usePaginatedQuery` on list pages | Medium |
-| **P2** | Standardize toast usage | Small |
-| **P2** | Fix greeting based on time of day | Trivial |
-
----
-
-## Verdict
-
-The app has solid architecture (proper RLS, role-based routing, GA edge function, React Query caching) but has **3 critical security gaps** and several data integrity risks that must be addressed before production hosting. The P0 items are all small fixes that can be done in a single session.
-
-Shall I proceed with fixing all P0 and P1 items?
+## Build Order
+1. iCal export utility + wire to both dashboards
+2. PDF export utility + enable button on both dashboards
+3. DB migration for peer-to-peer swaps
+4. Enhanced swap UI (incoming/outgoing tabs, target faculty picker)
 
