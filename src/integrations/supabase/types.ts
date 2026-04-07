@@ -686,6 +686,7 @@ export type Database = {
           requester_id: string
           requester_name: string
           status: string
+          target_faculty_id: string | null
           to_day: Database["public"]["Enums"]["day_of_week"]
           to_slot_id: string
         }
@@ -699,6 +700,7 @@ export type Database = {
           requester_id: string
           requester_name: string
           status?: string
+          target_faculty_id?: string | null
           to_day: Database["public"]["Enums"]["day_of_week"]
           to_slot_id: string
         }
@@ -712,6 +714,7 @@ export type Database = {
           requester_id?: string
           requester_name?: string
           status?: string
+          target_faculty_id?: string | null
           to_day?: Database["public"]["Enums"]["day_of_week"]
           to_slot_id?: string
         }
@@ -721,6 +724,13 @@ export type Database = {
             columns: ["from_slot_id"]
             isOneToOne: false
             referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_requests_target_faculty_id_fkey"
+            columns: ["target_faculty_id"]
+            isOneToOne: false
+            referencedRelation: "faculty"
             referencedColumns: ["id"]
           },
           {
