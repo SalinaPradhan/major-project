@@ -1,84 +1,53 @@
 
 
-# Feature #6: Student/Faculty Tools
+# Fix Timetable Generation Issues
 
-Three sub-features: (A) iCal/.ics export, (B) PDF timetable export, (C) Enhanced swap request workflow with peer notifications.
+## Problems Identified
 
-## What Already Exists
-- Swap requests: full CRUD with `swap_requests` table, `FacultySwapPanel`, `SwapRequestFormDialog` -- faculty can create/cancel swaps
-- Student dashboard: has a disabled "Export PDF" button, weekly grid, today's schedule
-- Faculty dashboard: has swap panel, schedule timeline, workload card
-- Schedule entries are fully queryable with room/course/faculty/batch joins
+From analyzing the screenshot and the GA code in `supabase/functions/generate-timetable/index.ts`:
 
-## Implementation Plan
+### Problem 1: Multiple lectures stacked in one cell (Mon Period 1 shows ECE101, MATH101, MATH101, MATH201)
+**Root cause**: The Timetable page displays ALL entries for ALL batches in a single grid. When the schedule covers multiple batches (e.g., CSE2023-A has multiple sections or the schedule includes entries from other batches), they all pile up in the same cell. The grid needs a **batch filter** so you only see one batch's timetable at a time.
 
-### A. iCal/.ics Calendar Export (Student + Faculty Dashboards)
+### Problem 2: Lecture and Lab in same period for same batch
+**Root cause**: The GA's batch-clash constraint (line 134) counts overlaps but doesn't distinguish between lecture and lab types. A batch should have exactly ONE entry per time slot — either a lecture OR a lab, never both. The fitness function already penalizes batch overlaps, but the penalty weight may be insufficient, or the population/generations aren't enough to resolve all conflicts.
 
-**New file: `src/lib/icalExport.ts`**
-- Utility function that takes an array of schedule entries and generates a valid `.ics` file string
-- Each class becomes a `VEVENT` with `DTSTART`, `DTEND`, `SUMMARY` (course name), `LOCATION` (room), `DESCRIPTION` (faculty name)
-- Map day-of-week to next occurrence dates for recurring weekly events using `RRULE:FREQ=WEEKLY`
-- Trigger browser download of the `.ics` file
+### Problem 3: Lecture rooms used as lab rooms
+**Root cause**: In `randomChromosome` (line 91-93) and `mutate` (line 185-188), the code correctly filters `room_type === "lab"` for lab assignments. However, it does NOT enforce the reverse: **lectures should only use non-lab rooms** (classrooms, auditoriums, etc.). A lecture can currently be assigned to a lab room. Also, when no suitable rooms are found (line 95), it falls back to ALL rooms — including labs for lectures.
 
-**Update `StudentDashboard.tsx`**:
-- Add "Sync Calendar" button next to the disabled PDF button
-- On click, generate .ics from the student's published schedule entries (filtered by batch)
+## Fix Plan
 
-**Update `FacultyDashboard.tsx`**:
-- Add "Sync Calendar" button
-- Generate .ics from the faculty's schedule entries
+### Fix 1: Add batch filter to Timetable page
+**File: `src/pages/Timetable.tsx`**
+- After selecting a schedule, add a **Batch dropdown** (populated from unique batches in the entries)
+- Filter `entries` by selected batch before building the grid
+- This immediately solves the "too many lectures in one cell" visual problem — each batch will show at most one entry per slot
 
-### B. PDF Timetable Export (Enable the Disabled Button)
+### Fix 2: Enforce room-type separation in the GA
+**File: `supabase/functions/generate-timetable/index.ts`**
 
-**New file: `src/lib/pdfExport.ts`**
-- Install `jspdf` + `jspdf-autotable` (already mentioned in project knowledge as planned)
-- Build a weekly timetable table (days x time slots) and render as PDF
-- Include header with student/faculty name, batch, semester info
+In `randomChromosome()` and `mutate()`:
+- For **lab** assignments: only assign to rooms where `room_type === "lab"` (already done)
+- For **lecture** assignments: only assign to rooms where `room_type !== "lab"` (NEW)
+- Remove the fallback to ALL rooms (`const roomPool = suitableRooms.length > 0 ? suitableRooms : rooms`) — if no suitable room exists, throw a clear error instead of silently assigning wrong room types
 
-**Update `StudentDashboard.tsx`**:
-- Enable the "Export PDF" button, wire it to the PDF generator
-- Pass the weekly grid data to generate the timetable PDF
+In `fitness()`:
+- Add a new hard constraint: **lecture assigned to lab room** → penalty (reverse of the existing lab-in-non-lab check)
+- This ensures evolutionary pressure also pushes any crossover artifacts toward correct room types
 
-**Update `FacultyDashboard.tsx`**:
-- Add "Export PDF" button with same logic
+### Fix 3: Strengthen batch-overlap penalty
+**File: `supabase/functions/generate-timetable/index.ts`**
 
-### C. Enhanced Swap Request Workflow
+The batch overlap check at line 152 already penalizes `count > 1`, but increase the penalty weight for batch clashes to make them as critical as room clashes. A batch having 2+ entries in the same slot is a hard violation that should never survive.
 
-**Database migration**: Add `target_faculty_id` column to `swap_requests` table to support peer-to-peer swaps (faculty A requests to swap a slot with faculty B).
+## Files Changed
 
-**Update `SwapRequestFormDialog.tsx`**:
-- Add a "Swap With" faculty dropdown so requesters can target a specific peer
-- Show the target faculty's schedule for the requested day/slot
-
-**Update `FacultySwapPanel.tsx`**:
-- Show "Incoming" vs "Outgoing" tabs
-- Incoming: swaps where `target_faculty_id` matches current faculty -- show Approve/Reject buttons
-- Outgoing: swaps created by current faculty -- show Cancel button
-
-**Update `useSwapRequests.ts`**:
-- Add query for incoming swap requests (`target_faculty_id = current faculty`)
-- Add approve/reject mutations
-
-**System alert on swap approval**:
-- When a swap is approved, insert a `system_alerts` row notifying both parties
-
-## File Changes Summary
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/lib/icalExport.ts` | Create -- .ics generation utility |
-| `src/lib/pdfExport.ts` | Create -- PDF timetable generator |
-| `src/pages/StudentDashboard.tsx` | Edit -- enable PDF, add iCal button |
-| `src/pages/FacultyDashboard.tsx` | Edit -- add PDF + iCal buttons |
-| `src/components/dashboard/FacultySwapPanel.tsx` | Edit -- incoming/outgoing tabs |
-| `src/components/dashboard/SwapRequestFormDialog.tsx` | Edit -- add target faculty picker |
-| `src/hooks/useSwapRequests.ts` | Edit -- add incoming query, target_faculty support |
-| DB migration | Add `target_faculty_id` to `swap_requests` |
-| `package.json` | Add `jspdf` + `jspdf-autotable` |
+| `src/pages/Timetable.tsx` | Add batch filter dropdown; filter entries by selected batch |
+| `supabase/functions/generate-timetable/index.ts` | Enforce lecture rooms != lab; remove unsafe fallback; add reverse room-type penalty in fitness |
 
-## Build Order
-1. iCal export utility + wire to both dashboards
-2. PDF export utility + enable button on both dashboards
-3. DB migration for peer-to-peer swaps
-4. Enhanced swap UI (incoming/outgoing tabs, target faculty picker)
+## Important Note
+
+After deploying the GA fix, existing timetables will still have the old conflicts. You'll need to **regenerate** the timetable to see clean results.
 
