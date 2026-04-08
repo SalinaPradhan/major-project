@@ -1,30 +1,37 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useSchedules, useScheduleEntries } from '@/hooks/useSchedules';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Calendar } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState, useMemo, useEffect } from "react";
+import { useSchedules, useScheduleEntries } from "@/hooks/useSchedules";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
-const DAY_LABELS: Record<string, string> = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat' };
+const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+const DAY_LABELS: Record<string, string> = {
+  monday: "Mon",
+  tuesday: "Tue",
+  wednesday: "Wed",
+  thursday: "Thu",
+  friday: "Fri",
+  saturday: "Sat",
+};
 
 const COLORS = [
-  'bg-primary/15 border-primary/30 text-primary',
-  'bg-accent/15 border-accent/30 text-accent-foreground',
-  'bg-destructive/10 border-destructive/30 text-destructive',
-  'bg-secondary border-secondary text-secondary-foreground',
-  'bg-muted border-muted text-muted-foreground',
+  "bg-primary/15 border-primary/30 text-foreground",
+  "bg-accent/15 border-accent/30 text-foreground",
+  "bg-destructive/10 border-destructive/30 text-foreground",
+  "bg-secondary border-secondary text-foreground",
+  "bg-muted border-muted text-foreground",
 ];
 
 export default function Timetable() {
   const { data: schedules = [] } = useSchedules();
   const { isStudent } = useAuth();
-  const published = useMemo(() => schedules.filter((s) => s.status === 'published'), [schedules]);
+  const published = useMemo(() => schedules.filter((s) => s.status === "published"), [schedules]);
   const allSchedules = isStudent ? published : schedules;
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');
-  const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
+  const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
 
   // Auto-select first published schedule on load
   useEffect(() => {
@@ -49,19 +56,19 @@ export default function Timetable() {
 
   // Auto-select first batch when entries load
   useEffect(() => {
-    if (batches.length > 0 && selectedBatchId === 'all') {
+    if (batches.length > 0 && selectedBatchId === "all") {
       setSelectedBatchId(batches[0].id);
     }
   }, [batches, selectedBatchId]);
 
   // Reset batch selection when schedule changes
   useEffect(() => {
-    setSelectedBatchId('all');
+    setSelectedBatchId("all");
   }, [selectedScheduleId]);
 
   // Filter entries by selected batch
   const filteredEntries = useMemo(() => {
-    if (selectedBatchId === 'all') return entries;
+    if (selectedBatchId === "all") return entries;
     return entries.filter((e: any) => e.teaching_assignment?.batch_id === selectedBatchId);
   }, [entries, selectedBatchId]);
 
@@ -69,21 +76,27 @@ export default function Timetable() {
   const courseColorMap = useMemo(() => {
     const map = new Map<string, string>();
     const courseIds = [...new Set(filteredEntries.map((e: any) => e.teaching_assignment?.course_id))];
-    courseIds.forEach((id, i) => { if (id) map.set(id, COLORS[i % COLORS.length]); });
+    courseIds.forEach((id, i) => {
+      if (id) map.set(id, COLORS[i % COLORS.length]);
+    });
     return map;
   }, [filteredEntries]);
 
   // Get unique time slots sorted
   const timeSlots = useMemo(() => {
     const slotMap = new Map<string, any>();
-    entries.forEach((e: any) => { if (e.time_slot) slotMap.set(e.time_slot.id, e.time_slot); });
+    entries.forEach((e: any) => {
+      if (e.time_slot) slotMap.set(e.time_slot.id, e.time_slot);
+    });
     return [...slotMap.values()].sort((a, b) => a.slot_order - b.slot_order);
   }, [entries]);
 
   // Build grid lookup: day -> time_slot_id -> entry[]
   const grid = useMemo(() => {
     const g: Record<string, Record<string, any[]>> = {};
-    DAYS.forEach(d => { g[d] = {}; });
+    DAYS.forEach((d) => {
+      g[d] = {};
+    });
     filteredEntries.forEach((e: any) => {
       if (!g[e.day]) g[e.day] = {};
       if (!g[e.day][e.time_slot_id]) g[e.day][e.time_slot_id] = [];
@@ -122,7 +135,9 @@ export default function Timetable() {
               <SelectContent>
                 <SelectItem value="all">All Batches</SelectItem>
                 {batches.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -134,7 +149,9 @@ export default function Timetable() {
         <Card className="glass-card">
           <CardContent className="pt-6">
             <p className="text-muted-foreground text-center py-12">
-              {allSchedules.length === 0 ? 'No schedules available yet. Generate one from the AI Scheduler.' : 'Select a schedule above to view the timetable.'}
+              {allSchedules.length === 0
+                ? "No schedules available yet. Generate one from the AI Scheduler."
+                : "Select a schedule above to view the timetable."}
             </p>
           </CardContent>
         </Card>
@@ -149,22 +166,39 @@ export default function Timetable() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="p-2 border border-border bg-muted text-muted-foreground font-medium text-left w-20">Day</th>
-                {timeSlots.map(ts => (
-                  <th key={ts.id} className={cn("p-2 border border-border text-center font-medium min-w-[120px]", ts.is_break ? "bg-muted/50 text-muted-foreground" : "bg-muted text-muted-foreground")}>
+                <th className="p-2 border border-border bg-muted text-muted-foreground font-medium text-left w-20">
+                  Day
+                </th>
+                {timeSlots.map((ts) => (
+                  <th
+                    key={ts.id}
+                    className={cn(
+                      "p-2 border border-border text-center font-medium min-w-[120px]",
+                      ts.is_break ? "bg-muted/50 text-muted-foreground" : "bg-muted text-muted-foreground",
+                    )}
+                  >
                     <div className="text-xs">{ts.label}</div>
-                    <div className="text-[10px] opacity-70">{ts.start_time?.slice(0,5)}–{ts.end_time?.slice(0,5)}</div>
+                    <div className="text-[10px] opacity-70">
+                      {ts.start_time?.slice(0, 5)}–{ts.end_time?.slice(0, 5)}
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {DAYS.map(day => (
+              {DAYS.map((day) => (
                 <tr key={day}>
                   <td className="p-2 border border-border bg-muted font-medium text-foreground">{DAY_LABELS[day]}</td>
-                  {timeSlots.map(ts => {
+                  {timeSlots.map((ts) => {
                     if (ts.is_break) {
-                      return <td key={ts.id} className="p-1 border border-border bg-muted/30 text-center text-[10px] text-muted-foreground">Break</td>;
+                      return (
+                        <td
+                          key={ts.id}
+                          className="p-1 border border-border bg-muted/30 text-center text-[10px] text-muted-foreground"
+                        >
+                          Break
+                        </td>
+                      );
                     }
                     const cellEntries = grid[day]?.[ts.id] || [];
                     return (
@@ -177,7 +211,11 @@ export default function Timetable() {
                               <div className="font-semibold text-xs">{ta?.course?.code}</div>
                               <div className="text-[10px] opacity-80">{ta?.faculty?.name}</div>
                               <div className="text-[10px] opacity-70">{entry.room?.name}</div>
-                              {ta?.is_lab && <Badge variant="outline" className="text-[9px] h-4 mt-0.5">Lab</Badge>}
+                              {ta?.is_lab && (
+                                <Badge variant="outline" className="text-[9px] h-4 mt-0.5">
+                                  Lab
+                                </Badge>
+                              )}
                             </div>
                           );
                         })}
