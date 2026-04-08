@@ -62,6 +62,9 @@ interface ExpandedSlot {
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const STAGNATION_LIMIT = 20;
 
+// Room types that are NOT labs (valid for lectures)
+const LECTURE_ROOM_TYPES = ["classroom", "auditorium", "conference_hall"];
+
 // --- Helper Functions ---
 
 function expandAssignments(assignments: TeachingAssignment[]): ExpandedSlot[] {
@@ -81,22 +84,55 @@ function expandAssignments(assignments: TeachingAssignment[]): ExpandedSlot[] {
   return expanded;
 }
 
+function getRoomPool(slot: ExpandedSlot, rooms: Room[]): Room[] {
+  if (slot.is_lab) {
+    // Labs MUST go in lab rooms with sufficient capacity
+    const labRooms = rooms.filter(
+      (r) => r.room_type === "lab" && r.capacity >= slot.batch_strength
+    );
+    if (labRooms.length === 0) {
+      // Fallback: lab rooms of any capacity (still only labs)
+      const anyLabRooms = rooms.filter((r) => r.room_type === "lab");
+      if (anyLabRooms.length === 0) {
+        throw new Error(
+          `No lab rooms available. Please add lab rooms before generating a timetable.`
+        );
+      }
+      return anyLabRooms;
+    }
+    return labRooms;
+  } else {
+    // Lectures MUST go in non-lab rooms (classroom, auditorium, conference_hall, etc.)
+    const lectureRooms = rooms.filter(
+      (r) => r.room_type !== "lab" && r.capacity >= slot.batch_strength
+    );
+    if (lectureRooms.length === 0) {
+      // Fallback: any non-lab room regardless of capacity
+      const anyLectureRooms = rooms.filter((r) => r.room_type !== "lab");
+      if (anyLectureRooms.length === 0) {
+        throw new Error(
+          `No lecture rooms (classrooms/auditoriums) available. Please add rooms before generating a timetable.`
+        );
+      }
+      return anyLectureRooms;
+    }
+    return lectureRooms;
+  }
+}
+
 function randomChromosome(
   slots: ExpandedSlot[],
   rooms: Room[],
-  timeSlots: TimeSlot[],
+  timeSlots: TimeSlot[]
 ): Chromosome {
   const nonBreakSlots = timeSlots.filter((ts) => !ts.is_break);
   return slots.map((s) => {
-    const suitableRooms = rooms.filter((r) => {
-      if (s.is_lab && r.room_type !== "lab") return false;
-      return r.capacity >= s.batch_strength;
-    });
-    const roomPool = suitableRooms.length > 0 ? suitableRooms : rooms;
+    const roomPool = getRoomPool(s, rooms);
     return {
       teaching_assignment_id: s.ta_id,
       room_id: roomPool[Math.floor(Math.random() * roomPool.length)].id,
-      time_slot_id: nonBreakSlots[Math.floor(Math.random() * nonBreakSlots.length)].id,
+      time_slot_id:
+        nonBreakSlots[Math.floor(Math.random() * nonBreakSlots.length)].id,
       day: DAYS[Math.floor(Math.random() * DAYS.length)],
     };
   });
@@ -107,7 +143,7 @@ function fitness(
   expandedSlots: ExpandedSlot[],
   rooms: Room[],
   facultyMap: Map<string, Faculty>,
-  prefMap: Map<string, number>,
+  prefMap: Map<string, number>
 ): { score: number; hardViolations: number; softScore: number } {
   let hardViolations = 0;
   let softScore = 0;
@@ -135,11 +171,21 @@ function fitness(
 
     const room = roomMap.get(gene.room_id);
     if (room && room.capacity < slot.batch_strength) hardViolations += 1;
-    if (slot.is_lab && room && room.room_type !== "lab") hardViolations += 1;
+
+    // Lab in non-lab room = hard violation
+    if (slot.is_lab && room && room.room_type !== "lab") hardViolations += 2;
+    // Lecture in lab room = hard violation
+    if (!slot.is_lab && room && room.room_type === "lab") hardViolations += 2;
 
     const facDayKey = `${slot.faculty_id}-${gene.day}`;
-    facultyDayHours.set(facDayKey, (facultyDayHours.get(facDayKey) || 0) + 1);
-    facultyWeekHours.set(slot.faculty_id, (facultyWeekHours.get(slot.faculty_id) || 0) + 1);
+    facultyDayHours.set(
+      facDayKey,
+      (facultyDayHours.get(facDayKey) || 0) + 1
+    );
+    facultyWeekHours.set(
+      slot.faculty_id,
+      (facultyWeekHours.get(slot.faculty_id) || 0) + 1
+    );
 
     const prefKey = `${slot.faculty_id}-${gene.day}-${gene.time_slot_id}`;
     const pref = prefMap.get(prefKey);
@@ -147,25 +193,31 @@ function fitness(
     if (pref === 2) softScore += 1;
   }
 
-  for (const [, count] of roomSlotMap) if (count > 1) hardViolations += (count - 1);
-  for (const [, count] of facultySlotMap) if (count > 1) hardViolations += (count - 1);
-  for (const [, count] of batchSlotMap) if (count > 1) hardViolations += (count - 1);
+  for (const [, count] of roomSlotMap)
+    if (count > 1) hardViolations += (count - 1) * 2;
+  for (const [, count] of facultySlotMap)
+    if (count > 1) hardViolations += (count - 1) * 2;
+  // Batch overlap is critical — a batch can only have ONE class per slot
+  for (const [, count] of batchSlotMap)
+    if (count > 1) hardViolations += (count - 1) * 3;
 
   for (const [key, hours] of facultyDayHours) {
     const facId = key.split("-")[0];
     const fac = facultyMap.get(facId);
-    if (fac && hours > fac.max_hours_per_day) hardViolations += (hours - fac.max_hours_per_day);
+    if (fac && hours > fac.max_hours_per_day)
+      hardViolations += hours - fac.max_hours_per_day;
   }
   for (const [facId, hours] of facultyWeekHours) {
     const fac = facultyMap.get(facId);
-    if (fac && hours > fac.max_hours_per_week) hardViolations += (hours - fac.max_hours_per_week);
+    if (fac && hours > fac.max_hours_per_week)
+      hardViolations += hours - fac.max_hours_per_week;
   }
 
   const score = 1000 - hardViolations * 10 + softScore;
   return { score, hardViolations, softScore };
 }
 
-// Fix 7: Uniform crossover with length guard
+// Uniform crossover with length guard
 function crossover(a: Chromosome, b: Chromosome): Chromosome {
   if (a.length !== b.length) return [...a];
   return a.map((geneA, i) => (Math.random() < 0.5 ? geneA : b[i]));
@@ -176,37 +228,40 @@ function mutate(
   rate: number,
   rooms: Room[],
   timeSlots: TimeSlot[],
-  expandedSlots: ExpandedSlot[],
+  expandedSlots: ExpandedSlot[]
 ): Chromosome {
   const nonBreakSlots = timeSlots.filter((ts) => !ts.is_break);
   return chromosome.map((gene, i) => {
     if (Math.random() > rate) return gene;
     const s = expandedSlots[i];
-    const suitableRooms = rooms.filter((r) => {
-      if (s.is_lab && r.room_type !== "lab") return false;
-      return r.capacity >= s.batch_strength;
-    });
-    const roomPool = suitableRooms.length > 0 ? suitableRooms : rooms;
+    const roomPool = getRoomPool(s, rooms);
     return {
       ...gene,
       room_id: roomPool[Math.floor(Math.random() * roomPool.length)].id,
-      time_slot_id: nonBreakSlots[Math.floor(Math.random() * nonBreakSlots.length)].id,
+      time_slot_id:
+        nonBreakSlots[Math.floor(Math.random() * nonBreakSlots.length)].id,
       day: DAYS[Math.floor(Math.random() * DAYS.length)],
     };
   });
 }
 
-function tournamentSelect(population: { chromosome: Chromosome; score: number }[], size = 3): Chromosome {
+function tournamentSelect(
+  population: { chromosome: Chromosome; score: number }[],
+  size = 3
+): Chromosome {
   let best = population[Math.floor(Math.random() * population.length)];
   for (let i = 1; i < size; i++) {
-    const contender = population[Math.floor(Math.random() * population.length)];
+    const contender =
+      population[Math.floor(Math.random() * population.length)];
     if (contender.score > best.score) best = contender;
   }
   return best.chromosome;
 }
 
-// Fix 4: Compute per-faculty workload from best chromosome
-function computeFacultyWorkload(chromosome: Chromosome, expandedSlots: ExpandedSlot[]): Map<string, number> {
+function computeFacultyWorkload(
+  chromosome: Chromosome,
+  expandedSlots: ExpandedSlot[]
+): Map<string, number> {
   const workload = new Map<string, number>();
   for (let i = 0; i < chromosome.length; i++) {
     const fid = expandedSlots[i].faculty_id;
@@ -229,25 +284,48 @@ Deno.serve(async (req) => {
 
   try {
     // Auth check: verify caller is admin
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
-    const { data: claimsData, error: claimsError } = await authClient.auth.getUser();
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } =
+      await authClient.auth.getUser();
     if (claimsError || !claimsData?.user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', claimsData.user.id).maybeSingle();
-    if (roleData?.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Only admins can generate timetables' }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", claimsData.user.id)
+      .maybeSingle();
+    if (roleData?.role !== "admin") {
+      return new Response(
+        JSON.stringify({ error: "Only admins can generate timetables" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    const { schedule_id, population_size = 50, generation_count = 200, mutation_rate = 0.1 } = await req.json();
+    const {
+      schedule_id,
+      population_size = 50,
+      generation_count = 200,
+      mutation_rate = 0.1,
+    } = await req.json();
 
-
-    // Fix 12: Mutex — check for running jobs on this schedule
+    // Mutex — check for running jobs on this schedule
     const { data: runningJobs } = await supabase
       .from("generation_jobs")
       .select("id")
@@ -256,8 +334,14 @@ Deno.serve(async (req) => {
 
     if (runningJobs && runningJobs.length > 0) {
       return new Response(
-        JSON.stringify({ error: "A generation is already running for this schedule. Please wait." }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({
+          error:
+            "A generation is already running for this schedule. Please wait.",
+        }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -278,18 +362,23 @@ Deno.serve(async (req) => {
       .single();
 
     const scopeDeptId = scheduleRecord?.department_id ?? null;
-    const scopeBatchIds: string[] = (scheduleRecord?.batch_ids as string[] | null) ?? [];
+    const scopeBatchIds: string[] =
+      (scheduleRecord?.batch_ids as string[] | null) ?? [];
 
     // Build teaching_assignments query with scope filtering
     let assignmentsQuery = supabase
       .from("teaching_assignments")
-      .select("*, course:courses(lecture_hours, lab_hours, department_id), batch:batches(strength)");
+      .select(
+        "*, course:courses(lecture_hours, lab_hours, department_id), batch:batches(strength)"
+      );
 
     if (scopeBatchIds.length > 0) {
       assignmentsQuery = assignmentsQuery.in("batch_id", scopeBatchIds);
     } else if (scopeDeptId) {
-      // Filter by department through courses
-      assignmentsQuery = assignmentsQuery.eq("course.department_id", scopeDeptId);
+      assignmentsQuery = assignmentsQuery.eq(
+        "course.department_id",
+        scopeDeptId
+      );
     }
 
     const [
@@ -307,30 +396,59 @@ Deno.serve(async (req) => {
     ]);
 
     // When filtering by department through join, PostgREST returns rows with null course
-    // Filter those out
-    const assignments = scopeDeptId && scopeBatchIds.length === 0
-      ? (rawAssignments || []).filter((a: any) => a.course !== null)
-      : rawAssignments;
+    const assignments =
+      scopeDeptId && scopeBatchIds.length === 0
+        ? (rawAssignments || []).filter((a: any) => a.course !== null)
+        : rawAssignments;
 
     if (!assignments?.length || !rooms?.length || !timeSlots?.length) {
       return new Response(
-        JSON.stringify({ error: "Missing data: need teaching assignments, rooms, and time slots" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({
+          error:
+            "Missing data: need teaching assignments, rooms, and time slots",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
-    const expandedSlots = expandAssignments(assignments as TeachingAssignment[]);
-    const facultyMap = new Map((facultyList || []).map((f: Faculty) => [f.id, f]));
-    const prefMap = new Map((preferences || []).map((p: FacultyPref) => [`${p.faculty_id}-${p.day}-${p.time_slot_id}`, p.preference]));
+    const expandedSlots = expandAssignments(
+      assignments as TeachingAssignment[]
+    );
+    const facultyMap = new Map(
+      (facultyList || []).map((f: Faculty) => [f.id, f])
+    );
+    const prefMap = new Map(
+      (preferences || []).map((p: FacultyPref) => [
+        `${p.faculty_id}-${p.day}-${p.time_slot_id}`,
+        p.preference,
+      ])
+    );
 
     // Initialize population
     let population = Array.from({ length: population_size }, () => {
-      const chr = randomChromosome(expandedSlots, rooms as Room[], timeSlots as TimeSlot[]);
-      const f = fitness(chr, expandedSlots, rooms as Room[], facultyMap, prefMap);
-      return { chromosome: chr, score: f.score, hardViolations: f.hardViolations, softScore: f.softScore };
+      const chr = randomChromosome(
+        expandedSlots,
+        rooms as Room[],
+        timeSlots as TimeSlot[]
+      );
+      const f = fitness(
+        chr,
+        expandedSlots,
+        rooms as Room[],
+        facultyMap,
+        prefMap
+      );
+      return {
+        chromosome: chr,
+        score: f.score,
+        hardViolations: f.hardViolations,
+        softScore: f.softScore,
+      };
     });
 
-    // Fix 5: Stagnation detection
     let bestScoreEver = -Infinity;
     let generationsWithoutImprovement = 0;
 
@@ -345,15 +463,31 @@ Deno.serve(async (req) => {
         const parentA = tournamentSelect(population);
         const parentB = tournamentSelect(population);
         let child = crossover(parentA, parentB);
-        child = mutate(child, mutation_rate, rooms as Room[], timeSlots as TimeSlot[], expandedSlots);
-        const f = fitness(child, expandedSlots, rooms as Room[], facultyMap, prefMap);
-        newPop.push({ chromosome: child, score: f.score, hardViolations: f.hardViolations, softScore: f.softScore });
+        child = mutate(
+          child,
+          mutation_rate,
+          rooms as Room[],
+          timeSlots as TimeSlot[],
+          expandedSlots
+        );
+        const f = fitness(
+          child,
+          expandedSlots,
+          rooms as Room[],
+          facultyMap,
+          prefMap
+        );
+        newPop.push({
+          chromosome: child,
+          score: f.score,
+          hardViolations: f.hardViolations,
+          softScore: f.softScore,
+        });
       }
 
       population = newPop;
       population.sort((a, b) => b.score - a.score);
 
-      // Fix 5: Track stagnation
       if (population[0].score > bestScoreEver) {
         bestScoreEver = population[0].score;
         generationsWithoutImprovement = 0;
@@ -361,18 +495,24 @@ Deno.serve(async (req) => {
         generationsWithoutImprovement++;
       }
 
-      // Fix 19: Update progress every 10 generations
+      // Update progress every 10 generations
       if (jobId && gen % 10 === 0) {
-        await supabase.from("generation_jobs").update({
-          current_generation: gen,
-          total_generations: generation_count,
-          current_fitness: population[0].score,
-          current_violations: population[0].hardViolations,
-        }).eq("id", jobId);
+        await supabase
+          .from("generation_jobs")
+          .update({
+            current_generation: gen,
+            total_generations: generation_count,
+            current_fitness: population[0].score,
+            current_violations: population[0].hardViolations,
+          })
+          .eq("id", jobId);
       }
 
-      // Only terminate early if zero hard violations AND stagnated
-      if (population[0].hardViolations === 0 && generationsWithoutImprovement >= STAGNATION_LIMIT) {
+      // Terminate early if zero violations and stagnated
+      if (
+        population[0].hardViolations === 0 &&
+        generationsWithoutImprovement >= STAGNATION_LIMIT
+      ) {
         break;
       }
     }
@@ -381,7 +521,7 @@ Deno.serve(async (req) => {
     population.sort((a, b) => b.score - a.score);
     const best = population[0];
 
-    // Fix 11: Save version snapshot before overwriting
+    // Save version snapshot before overwriting
     const { data: currentSchedule } = await supabase
       .from("schedules")
       .select("current_version")
@@ -390,7 +530,6 @@ Deno.serve(async (req) => {
 
     const newVersion = (currentSchedule?.current_version ?? 0) + 1;
 
-    // Snapshot old entries before deleting
     const { data: oldEntries } = await supabase
       .from("schedule_entries")
       .select("*")
@@ -406,7 +545,10 @@ Deno.serve(async (req) => {
     }
 
     // Delete old entries for this schedule
-    await supabase.from("schedule_entries").delete().eq("schedule_id", schedule_id);
+    await supabase
+      .from("schedule_entries")
+      .delete()
+      .eq("schedule_id", schedule_id);
 
     // Insert new entries
     const entries = best.chromosome.map((gene) => ({
@@ -418,7 +560,9 @@ Deno.serve(async (req) => {
     }));
 
     if (entries.length > 0) {
-      const { error: insertError } = await supabase.from("schedule_entries").insert(entries);
+      const { error: insertError } = await supabase
+        .from("schedule_entries")
+        .insert(entries);
       if (insertError) throw insertError;
     }
 
@@ -437,16 +581,26 @@ Deno.serve(async (req) => {
       })
       .eq("id", schedule_id);
 
-    // Fix 4: Write back faculty workload
+    // Write back faculty workload
     const workload = computeFacultyWorkload(best.chromosome, expandedSlots);
-    const workloadUpdates = Array.from(workload.entries()).map(([faculty_id, load]) =>
-      supabase.from("faculty").update({ current_load: load }).eq("id", faculty_id)
+    const workloadUpdates = Array.from(workload.entries()).map(
+      ([faculty_id, load]) =>
+        supabase
+          .from("faculty")
+          .update({ current_load: load })
+          .eq("id", faculty_id)
     );
     await Promise.all(workloadUpdates);
 
-    // Fix 12: Mark job completed
+    // Mark job completed
     if (jobId) {
-      await supabase.from("generation_jobs").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", jobId);
+      await supabase
+        .from("generation_jobs")
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", jobId);
     }
 
     return new Response(
@@ -458,16 +612,22 @@ Deno.serve(async (req) => {
         entries_count: entries.length,
         version: newVersion,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    // Fix 12: Mark job failed on error
     if (jobId) {
-      await supabase.from("generation_jobs").update({ status: "failed", error_message: error.message, completed_at: new Date().toISOString() }).eq("id", jobId);
+      await supabase
+        .from("generation_jobs")
+        .update({
+          status: "failed",
+          error_message: error.message,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", jobId);
     }
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
