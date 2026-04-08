@@ -24,6 +24,7 @@ export default function Timetable() {
   const published = useMemo(() => schedules.filter((s) => s.status === 'published'), [schedules]);
   const allSchedules = isStudent ? published : schedules;
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
 
   // Auto-select first published schedule on load
   useEffect(() => {
@@ -33,13 +34,44 @@ export default function Timetable() {
   }, [published, selectedScheduleId]);
   const { data: entries = [] } = useScheduleEntries(selectedScheduleId || null);
 
+  // Extract unique batches from entries
+  const batches = useMemo(() => {
+    const batchMap = new Map<string, { id: string; name: string }>();
+    entries.forEach((e: any) => {
+      const batch = e.teaching_assignment?.batch;
+      const batchId = e.teaching_assignment?.batch_id;
+      if (batchId && batch) {
+        batchMap.set(batchId, { id: batchId, name: batch.name || batchId });
+      }
+    });
+    return [...batchMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [entries]);
+
+  // Auto-select first batch when entries load
+  useEffect(() => {
+    if (batches.length > 0 && selectedBatchId === 'all') {
+      setSelectedBatchId(batches[0].id);
+    }
+  }, [batches, selectedBatchId]);
+
+  // Reset batch selection when schedule changes
+  useEffect(() => {
+    setSelectedBatchId('all');
+  }, [selectedScheduleId]);
+
+  // Filter entries by selected batch
+  const filteredEntries = useMemo(() => {
+    if (selectedBatchId === 'all') return entries;
+    return entries.filter((e: any) => e.teaching_assignment?.batch_id === selectedBatchId);
+  }, [entries, selectedBatchId]);
+
   // Build a color map for courses
   const courseColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    const courseIds = [...new Set(entries.map((e: any) => e.teaching_assignment?.course_id))];
+    const courseIds = [...new Set(filteredEntries.map((e: any) => e.teaching_assignment?.course_id))];
     courseIds.forEach((id, i) => { if (id) map.set(id, COLORS[i % COLORS.length]); });
     return map;
-  }, [entries]);
+  }, [filteredEntries]);
 
   // Get unique time slots sorted
   const timeSlots = useMemo(() => {
@@ -52,35 +84,50 @@ export default function Timetable() {
   const grid = useMemo(() => {
     const g: Record<string, Record<string, any[]>> = {};
     DAYS.forEach(d => { g[d] = {}; });
-    entries.forEach((e: any) => {
+    filteredEntries.forEach((e: any) => {
       if (!g[e.day]) g[e.day] = {};
       if (!g[e.day][e.time_slot_id]) g[e.day][e.time_slot_id] = [];
       g[e.day][e.time_slot_id].push(e);
     });
     return g;
-  }, [entries]);
+  }, [filteredEntries]);
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <Calendar className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Timetable</h1>
         </div>
-        {allSchedules.length > 0 && (
-          <Select value={selectedScheduleId} onValueChange={setSelectedScheduleId}>
-            <SelectTrigger className="w-72">
-              <SelectValue placeholder="Select a schedule" />
-            </SelectTrigger>
-            <SelectContent>
-              {allSchedules.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name} <span className="text-muted-foreground ml-1">({s.status})</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-3">
+          {allSchedules.length > 0 && (
+            <Select value={selectedScheduleId} onValueChange={setSelectedScheduleId}>
+              <SelectTrigger className="w-60">
+                <SelectValue placeholder="Select a schedule" />
+              </SelectTrigger>
+              <SelectContent>
+                {allSchedules.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} <span className="text-muted-foreground ml-1">({s.status})</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {batches.length > 0 && selectedScheduleId && (
+            <Select value={selectedBatchId} onValueChange={setSelectedBatchId}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select batch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Batches</SelectItem>
+                {batches.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       {!selectedScheduleId ? (
@@ -91,7 +138,7 @@ export default function Timetable() {
             </p>
           </CardContent>
         </Card>
-      ) : entries.length === 0 ? (
+      ) : filteredEntries.length === 0 ? (
         <Card className="glass-card">
           <CardContent className="pt-6">
             <p className="text-muted-foreground text-center py-12">No entries found for this schedule.</p>
