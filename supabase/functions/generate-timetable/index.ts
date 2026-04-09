@@ -62,8 +62,11 @@ interface ExpandedSlot {
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const STAGNATION_LIMIT = 20;
 
-// Room types that are NOT labs (valid for lectures)
-const LECTURE_ROOM_TYPES = ["classroom", "auditorium", "conference_hall"];
+// Premier venue types excluded from GA scheduling (managed via Venue Management)
+const PREMIER_VENUE_TYPES = ["auditorium", "conference_hall", "indoor_stadium", "cineplex"];
+
+// Room types that are NOT labs (valid for lectures) — excludes premier venues
+const LECTURE_ROOM_TYPES = ["classroom"];
 
 // --- Helper Functions ---
 

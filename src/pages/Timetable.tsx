@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSchedules, useScheduleEntries } from "@/hooks/useSchedules";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
