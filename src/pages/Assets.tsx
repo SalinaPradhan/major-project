@@ -160,7 +160,6 @@ export default function Assets() {
     );
   }
 
-  const { paginatedData: paginatedAssets, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filteredData });
 
   const all = assets ?? [];
 
