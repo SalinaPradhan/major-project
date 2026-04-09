@@ -34,6 +34,8 @@ export default function Staff() {
       typeField: 'role',
     });
 
+  const { paginatedData: paginatedStaff, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filteredData });
+
   const statusOptions: FilterOption[] = [
     { value: 'available', label: 'Available' },
     { value: 'assigned', label: 'Assigned' },
@@ -144,7 +146,6 @@ export default function Staff() {
     );
   }
 
-  const { paginatedData: paginatedStaff, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filteredData });
 
   const all = staff ?? [];
 
