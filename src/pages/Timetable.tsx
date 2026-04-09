@@ -41,6 +41,7 @@ export default function Timetable() {
     }
   }, [published, selectedScheduleId]);
   const { data: entries = [] } = useScheduleEntries(selectedScheduleId || null);
+  const { data: allTimeSlots = [] } = useTimeSlots();
 
   // Extract unique batches from entries
   const batches = useMemo(() => {

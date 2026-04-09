@@ -107,14 +107,14 @@ function getRoomPool(slot: ExpandedSlot, rooms: Room[]): Room[] {
   } else {
     // Lectures MUST go in non-lab rooms (classroom, auditorium, conference_hall, etc.)
     const lectureRooms = rooms.filter(
-      (r) => r.room_type !== "lab" && r.capacity >= slot.batch_strength
+      (r) => r.room_type !== "lab" && !PREMIER_VENUE_TYPES.includes(r.room_type) && r.capacity >= slot.batch_strength
     );
     if (lectureRooms.length === 0) {
-      // Fallback: any non-lab room regardless of capacity
-      const anyLectureRooms = rooms.filter((r) => r.room_type !== "lab");
+      // Fallback: any non-lab, non-premier room regardless of capacity
+      const anyLectureRooms = rooms.filter((r) => r.room_type !== "lab" && !PREMIER_VENUE_TYPES.includes(r.room_type));
       if (anyLectureRooms.length === 0) {
         throw new Error(
-          `No lecture rooms (classrooms/auditoriums) available. Please add rooms before generating a timetable.`
+          `No lecture rooms (classrooms) available. Please add rooms before generating a timetable.`
         );
       }
       return anyLectureRooms;
