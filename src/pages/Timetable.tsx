@@ -84,14 +84,8 @@ export default function Timetable() {
     return map;
   }, [filteredEntries]);
 
-  // Get unique time slots sorted
-  const timeSlots = useMemo(() => {
-    const slotMap = new Map<string, any>();
-    entries.forEach((e: any) => {
-      if (e.time_slot) slotMap.set(e.time_slot.id, e.time_slot);
-    });
-    return [...slotMap.values()].sort((a, b) => a.slot_order - b.slot_order);
-  }, [entries]);
+  // Use all time slots from DB (sorted by slot_order)
+  const timeSlots = allTimeSlots;
 
   // Build grid lookup: day -> time_slot_id -> entry[]
   const grid = useMemo(() => {
