@@ -41,6 +41,8 @@ export default function Assets() {
       typeField: 'type',
     });
 
+  const { paginatedData: paginatedAssets, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filteredData });
+
   const statusOptions: FilterOption[] = [
     { value: 'working', label: 'Working' },
     { value: 'broken', label: 'Broken' },
@@ -158,7 +160,6 @@ export default function Assets() {
     );
   }
 
-  const { paginatedData: paginatedAssets, currentPage, totalPages, totalItems, hasNextPage, hasPrevPage, nextPage, prevPage, goToPage } = usePaginatedQuery({ data: filteredData });
 
   const all = assets ?? [];
 
