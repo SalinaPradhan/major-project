@@ -1,0 +1,2 @@
+ALTER TABLE teaching_assignments DROP CONSTRAINT IF EXISTS teaching_assignments_faculty_id_course_id_batch_id_key;
+ALTER TABLE teaching_assignments ADD CONSTRAINT teaching_assignments_faculty_course_batch_lab_key UNIQUE (faculty_id, course_id, batch_id, is_lab);
